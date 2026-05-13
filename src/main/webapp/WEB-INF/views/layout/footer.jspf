@@ -1,0 +1,59 @@
+    </main>
+    <footer class="footer-souvenir">
+        <div class="container">
+            <div class="footer-grid">
+                <section class="footer-col footer-brand">
+                    <h6 class="footer-title"><i class="fas fa-gift me-2"></i>Souvenir Shop</h6>
+                    <p class="footer-text mb-2">Cửa hàng đồ lưu niệm Việt Nam với sản phẩm tinh tế, phù hợp làm quà tặng và lưu giữ kỷ niệm.</p>
+                    <div class="footer-social">
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </section>
+
+                <section class="footer-col">
+                    <h6 class="footer-title">Liên kết nhanh</h6>
+                    <nav class="footer-links">
+                        <a href="${pageContext.request.contextPath}/home"><i class="fas fa-home me-1"></i>Trang chủ</a>
+                        <a href="${pageContext.request.contextPath}/products"><i class="fas fa-th-large me-1"></i>Sản phẩm</a>
+                        <a href="${pageContext.request.contextPath}/cart"><i class="fas fa-shopping-cart me-1"></i>Giỏ hàng</a>
+                        <a href="${pageContext.request.contextPath}/my-orders"><i class="fas fa-receipt me-1"></i>Đơn hàng của tôi</a>
+                    </nav>
+                </section>
+
+                <section class="footer-col">
+                    <h6 class="footer-title">Hỗ trợ khách hàng</h6>
+                    <nav class="footer-links">
+                        <a href="${pageContext.request.contextPath}/forgot-password"><i class="fas fa-key me-1"></i>Quên mật khẩu</a>
+                        <a href="${pageContext.request.contextPath}/profile"><i class="fas fa-user-circle me-1"></i>Tài khoản của tôi</a>
+                        <a href="${pageContext.request.contextPath}/checkout"><i class="fas fa-truck me-1"></i>Thanh toán</a>
+                    </nav>
+                </section>
+
+                <section class="footer-col">
+                    <h6 class="footer-title">Thông tin liên hệ</h6>
+                    <div class="footer-contact-item"><i class="fas fa-map-marker-alt"></i><span>Hà Nội, Việt Nam</span></div>
+                    <div class="footer-contact-item"><i class="fas fa-phone-alt"></i><span>Hotline: 09xx xxx xxx</span></div>
+                    <div class="footer-contact-item"><i class="fas fa-envelope"></i><span>support@souvenirshop.vn</span></div>
+                </section>
+            </div>
+
+            <div class="footer-bottom">
+                <span id="footer-copyright"></span>
+            </div>
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+            crossorigin="anonymous"></script>
+    <script>
+        document.querySelectorAll('.price-value').forEach(function(el) {
+            var n = parseFloat(el.getAttribute('data-price')) || 0;
+            el.textContent = new Intl.NumberFormat('vi-VN').format(n);
+        });
+        var fc = document.getElementById('footer-copyright');
+        if (fc) fc.textContent = '\u00A9 ' + new Date().getFullYear() + ' Souvenir Shop - Website b\u00E1n \u0111\u1ED3 l\u01B0u ni\u1EC7m Vi\u1EC7t Nam';
+    </script>
+</body>
+</html>

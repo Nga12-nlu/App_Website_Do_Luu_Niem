@@ -1,0 +1,19 @@
+# Sao chép thành db.properties và điền giá trị thật (không commit mật khẩu production).
+
+# --- MySQL ---
+db.url=jdbc:mysql://localhost:3306/souvenir_shop?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8
+db.username=root
+db.password=
+
+# --- URL công khai (dùng trong link reset email; để trống = suy ra từ request) ---
+app.public.base.url=http://localhost:8080/App_Website_Do_Luu_Niem
+
+# --- SMTP (Gmail: dùng App Password; hoặc SMTP nhà cung cấp) ---
+mail.enabled=false
+mail.smtp.host=smtp.gmail.com
+mail.smtp.port=587
+mail.smtp.username=
+mail.smtp.password=
+mail.smtp.starttls.enable=true
+mail.from.address=
+mail.from.name=Souvenir Shop
