@@ -250,6 +250,49 @@ public class ProductDaoImpl extends BaseDao implements ProductDao {
             sql.append("ORDER BY p.created_at DESC ");
         }
     }
+
+    @Override
+    public List<Product> findLowStock(int threshold, int limit) {
+        String sql = """
+                SELECT p.*, c.id AS c_id, c.name AS c_name, c.description AS c_description
+                FROM products p
+                LEFT JOIN categories c ON p.category_id = c.id
+                WHERE p.stock <= ?
+                ORDER BY p.stock ASC, p.name ASC
+                LIMIT ?
+                """;
+        List<Product> products = new ArrayList<>();
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, threshold);
+            ps.setInt(2, Math.max(1, limit));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    products.add(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi lấy sản phẩm sắp hết hàng", e);
+        }
+        return products;
+    }
+
+    @Override
+    public int countLowStock(int threshold) {
+        String sql = "SELECT COUNT(*) FROM products WHERE stock <= ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, threshold);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi đếm sản phẩm sắp hết hàng", e);
+        }
+        return 0;
+    }
 }
 
 

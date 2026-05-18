@@ -20,6 +20,10 @@ public interface UserDao {
     void updateProfile(int id, String fullName, String email);
 
     void updatePasswordHash(int userId, String passwordHash);
+
+    long countByRole(String role);
+
+    long countActiveCustomers();
 }
 
 

@@ -1,7 +1,9 @@
 package com.app.app_website_do_luu_niem.dao;
 
+import com.app.app_website_do_luu_niem.model.DashboardRevenuePoint;
 import com.app.app_website_do_luu_niem.model.Order;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +26,14 @@ public interface OrderDao {
     java.math.BigDecimal getTotalRevenue();
 
     long countByStatus(String status);
+
+    List<Order> findRecent(int limit);
+
+    List<DashboardRevenuePoint> getRevenueByLastDays(int days);
+
+    long countOrdersThisMonth();
+
+    BigDecimal getRevenueThisMonth();
 }
 
 

@@ -2,6 +2,7 @@ package com.app.app_website_do_luu_niem.dao.impl;
 
 import com.app.app_website_do_luu_niem.dao.BaseDao;
 import com.app.app_website_do_luu_niem.dao.OrderDao;
+import com.app.app_website_do_luu_niem.model.DashboardRevenuePoint;
 import com.app.app_website_do_luu_niem.model.Order;
 import com.app.app_website_do_luu_niem.model.OrderItem;
 import com.app.app_website_do_luu_niem.model.Product;
@@ -14,9 +15,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class OrderDaoImpl extends BaseDao implements OrderDao {
@@ -379,6 +384,108 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
             throw new RuntimeException("Lỗi đếm đơn hàng theo trạng thái", e);
         }
         return 0;
+    }
+
+    @Override
+    public List<Order> findRecent(int limit) {
+        String sql = "SELECT o.*, u.full_name, u.email " +
+                "FROM orders o JOIN users u ON o.user_id = u.id " +
+                "ORDER BY o.created_at DESC LIMIT ?";
+        List<Order> orders = new ArrayList<>();
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, Math.max(1, limit));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    orders.add(mapOrder(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi lấy đơn hàng gần đây", e);
+        }
+        return orders;
+    }
+
+    @Override
+    public List<DashboardRevenuePoint> getRevenueByLastDays(int days) {
+        int span = Math.max(1, days);
+        String sql = """
+                SELECT DATE(created_at) AS day,
+                       COALESCE(SUM(CASE WHEN status IN ('CONFIRMED', 'SHIPPED') THEN total_amount ELSE 0 END), 0) AS revenue,
+                       COUNT(*) AS order_count
+                FROM orders
+                WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+                GROUP BY DATE(created_at)
+                ORDER BY day
+                """;
+        Map<LocalDate, DashboardRevenuePoint> byDay = new HashMap<>();
+        DateTimeFormatter labelFmt = DateTimeFormatter.ofPattern("dd/MM");
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, span - 1);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    LocalDate day = rs.getDate("day").toLocalDate();
+                    byDay.put(day, new DashboardRevenuePoint(
+                            day.format(labelFmt),
+                            rs.getBigDecimal("revenue"),
+                            rs.getLong("order_count")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi thống kê doanh thu theo ngày", e);
+        }
+
+        List<DashboardRevenuePoint> result = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+        for (int i = span - 1; i >= 0; i--) {
+            LocalDate d = today.minusDays(i);
+            DashboardRevenuePoint point = byDay.get(d);
+            if (point == null) {
+                point = new DashboardRevenuePoint(d.format(labelFmt), BigDecimal.ZERO, 0);
+            }
+            result.add(point);
+        }
+        return result;
+    }
+
+    @Override
+    public long countOrdersThisMonth() {
+        String sql = """
+                SELECT COUNT(*) AS cnt FROM orders
+                WHERE YEAR(created_at) = YEAR(CURDATE()) AND MONTH(created_at) = MONTH(CURDATE())
+                """;
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getLong("cnt");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi đếm đơn hàng tháng này", e);
+        }
+        return 0;
+    }
+
+    @Override
+    public BigDecimal getRevenueThisMonth() {
+        String sql = """
+                SELECT COALESCE(SUM(total_amount), 0) AS total FROM orders
+                WHERE status IN ('CONFIRMED', 'SHIPPED')
+                  AND YEAR(created_at) = YEAR(CURDATE())
+                  AND MONTH(created_at) = MONTH(CURDATE())
+                """;
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getBigDecimal("total");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi tính doanh thu tháng này", e);
+        }
+        return BigDecimal.ZERO;
     }
 
     private Order mapOrder(ResultSet rs) throws SQLException {

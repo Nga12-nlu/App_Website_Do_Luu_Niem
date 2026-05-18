@@ -136,6 +136,38 @@ public class UserDaoImpl extends BaseDao implements UserDao {
         }
     }
 
+    @Override
+    public long countByRole(String role) {
+        String sql = "SELECT COUNT(*) FROM users WHERE role = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, role);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong(1);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi đếm người dùng theo vai trò", e);
+        }
+        return 0;
+    }
+
+    @Override
+    public long countActiveCustomers() {
+        String sql = "SELECT COUNT(*) FROM users WHERE role = 'CUSTOMER' AND active = 1";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi đếm khách hàng", e);
+        }
+        return 0;
+    }
+
     private User mapRow(ResultSet rs) throws SQLException {
         User user = new User();
         user.setId(rs.getInt("id"));

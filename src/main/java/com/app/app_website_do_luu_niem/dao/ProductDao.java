@@ -18,6 +18,10 @@ public interface ProductDao {
     void update(Product product);
 
     void delete(int id);
+
+    List<Product> findLowStock(int threshold, int limit);
+
+    int countLowStock(int threshold);
 }
 
 
