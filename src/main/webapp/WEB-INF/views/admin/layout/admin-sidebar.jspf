@@ -27,7 +27,7 @@
                 </a>
             </li>
             <li class="admin-nav-item">
-                <a href="${pageContext.request.contextPath}/admin/categories" class="admin-nav-link ${pageTitle eq 'Quản lý danh mục' ? 'active' : ''}">
+                <a href="${pageContext.request.contextPath}/admin/categories" class="admin-nav-link ${pageTitle eq 'Quản lý danh mục' or pageTitle eq 'Thêm danh mục' or pageTitle eq 'Sửa danh mục' or pageTitle eq 'Chi tiết danh mục' ? 'active' : ''}">
                     <i class="fas fa-tags"></i>
                     <span>Danh mục</span>
                 </a>

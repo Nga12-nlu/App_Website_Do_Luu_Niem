@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS order_items (
     CONSTRAINT fk_order_items_variant FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL
 );
 
--- Tài khoản: admin@example.com / admin (ADMIN). Khách demo id 2–8: cùng mật khẩu admin (chỉ môi trường dev).
+-- Tài khoản: admin@example.com / 123456 (ADMIN). Khách demo id 2–8: cùng mật khẩu admin (chỉ môi trường dev).
 INSERT IGNORE INTO users (id, email, password_hash, full_name, role, active) VALUES
 (1, 'admin@example.com', '$2a$10$3i0lHh72S.91Cki.9CAwgOiHivOTHVbhs4cl6tn0eC/19cUNnA4nm', 'Quản trị viên', 'ADMIN', 1),
 (2, 'minh.an@example.com', '$2a$10$3i0lHh72S.91Cki.9CAwgOiHivOTHVbhs4cl6tn0eC/19cUNnA4nm', 'Nguyễn Minh An', 'CUSTOMER', 1),

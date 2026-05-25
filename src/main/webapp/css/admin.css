@@ -1022,3 +1022,137 @@
     vertical-align: middle;
 }
 
+/* Category management */
+.cat-stat-card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--admin-border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    height: 100%;
+}
+
+.cat-stat-label {
+    display: block;
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.cat-stat-value {
+    font-size: 1.5rem;
+    color: var(--admin-primary);
+    line-height: 1.2;
+}
+
+.cat-stat-total { border-left: 4px solid var(--admin-accent); }
+.cat-stat-active { border-left: 4px solid var(--admin-success); }
+.cat-stat-empty { border-left: 4px solid var(--admin-warning); }
+.cat-stat-products { border-left: 4px solid #9b59b6; }
+
+.cat-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.cat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, #9b59b6, var(--admin-accent));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.cat-icon-lg {
+    width: 72px;
+    height: 72px;
+    font-size: 1.75rem;
+    border-radius: 0.75rem;
+}
+
+.cat-name-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.cat-name-link:hover {
+    color: var(--admin-accent);
+}
+
+.cat-desc-preview {
+    font-size: 0.9rem;
+    color: #555;
+    display: block;
+    max-width: 320px;
+}
+
+.cat-product-badge {
+    display: inline-block;
+    padding: 0.2rem 0.65rem;
+    background: #f0e8f8;
+    color: #7d3c98;
+    border-radius: 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.cat-product-badge:hover {
+    background: #9b59b6;
+    color: white;
+}
+
+.cat-row-empty {
+    background: #fafbfc;
+}
+
+.cat-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.cat-actions .admin-btn {
+    padding: 0.35rem 0.5rem;
+    min-width: 2rem;
+}
+
+.admin-table-categories td {
+    vertical-align: middle;
+}
+
+.cat-profile-card .cat-detail-desc {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #555;
+    margin-bottom: 0;
+}
+
+.cat-profile-actions {
+    background: #fafbfc;
+}
+
+.cat-form-hint code {
+    font-size: 0.8em;
+}
+
+.cat-product-thumb {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 0.35rem;
+}
+
+.cat-product-thumb-empty {
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
