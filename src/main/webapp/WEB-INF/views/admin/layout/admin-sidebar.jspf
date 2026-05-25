@@ -33,7 +33,7 @@
                 </a>
             </li>
             <li class="admin-nav-item">
-                <a href="${pageContext.request.contextPath}/admin/users" class="admin-nav-link ${pageTitle eq 'Quản lý người dùng' ? 'active' : ''}">
+                <a href="${pageContext.request.contextPath}/admin/users" class="admin-nav-link ${pageTitle eq 'Quản lý người dùng' or pageTitle eq 'Thêm người dùng' or pageTitle eq 'Sửa người dùng' or pageTitle eq 'Chi tiết người dùng' ? 'active' : ''}">
                     <i class="fas fa-users"></i>
                     <span>Người dùng</span>
                 </a>

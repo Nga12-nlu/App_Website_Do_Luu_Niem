@@ -2,14 +2,29 @@ package com.app.app_website_do_luu_niem.model;
 
 import java.time.LocalDateTime;
 
-public class User {
+/**
+ * Dòng người dùng hiển thị trên trang quản trị (kèm số đơn hàng).
+ */
+public class UserAdminRow {
     private int id;
     private String email;
-    private String passwordHash;
     private String fullName;
-    private String role; // ADMIN, CUSTOMER
+    private String role;
     private boolean active;
     private LocalDateTime createdAt;
+    private long orderCount;
+
+    public static UserAdminRow from(User user, long orderCount) {
+        UserAdminRow row = new UserAdminRow();
+        row.setId(user.getId());
+        row.setEmail(user.getEmail());
+        row.setFullName(user.getFullName());
+        row.setRole(user.getRole());
+        row.setActive(user.isActive());
+        row.setCreatedAt(user.getCreatedAt());
+        row.setOrderCount(orderCount);
+        return row;
+    }
 
     public int getId() {
         return id;
@@ -25,14 +40,6 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
     }
 
     public String getFullName() {
@@ -67,9 +74,15 @@ public class User {
         this.createdAt = createdAt;
     }
 
-    public boolean isAdminRole() {
+    public long getOrderCount() {
+        return orderCount;
+    }
+
+    public void setOrderCount(long orderCount) {
+        this.orderCount = orderCount;
+    }
+
+    public boolean isAdmin() {
         return "ADMIN".equalsIgnoreCase(role);
     }
 }
-
-
