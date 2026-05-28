@@ -48,6 +48,19 @@ public class DatabaseInitializer implements ServletContextListener {
                 CONSTRAINT fk_prt_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )""";
 
+    private static final String CREATE_STATIC_CONTENTS = """
+            CREATE TABLE IF NOT EXISTS static_contents (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                content_key VARCHAR(120) NOT NULL UNIQUE,
+                group_name VARCHAR(60) NOT NULL,
+                label VARCHAR(255) NOT NULL,
+                content_value TEXT NOT NULL,
+                input_type VARCHAR(20) NOT NULL DEFAULT 'TEXT',
+                active TINYINT(1) NOT NULL DEFAULT 1,
+                sort_order INT NOT NULL DEFAULT 0,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )""";
+
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         try {
@@ -56,6 +69,7 @@ public class DatabaseInitializer implements ServletContextListener {
             }
             migrateProductVariantsIfNeeded(sce);
             migratePasswordResetIfNeeded(sce);
+            migrateStaticContentsIfNeeded(sce);
         } catch (Exception e) {
             sce.getServletContext().log("Không thể khởi tạo database: " + e.getMessage(), e);
         }
@@ -113,6 +127,36 @@ public class DatabaseInitializer implements ServletContextListener {
                 st.execute(CREATE_PASSWORD_RESET);
                 sce.getServletContext().log("Đã tạo bảng password_reset_tokens.");
             }
+        }
+    }
+
+    private void migrateStaticContentsIfNeeded(ServletContextEvent sce) throws Exception {
+        if (!tableExists("products")) {
+            return;
+        }
+        try (Connection conn = DBConnection.getConnection();
+             Statement st = conn.createStatement()) {
+            if (!tableExists("static_contents")) {
+                st.execute(CREATE_STATIC_CONTENTS);
+                sce.getServletContext().log("Đã tạo bảng static_contents.");
+            }
+            st.execute("""
+                    INSERT INTO static_contents (content_key, group_name, label, content_value, input_type, active, sort_order) VALUES
+                    ('home.hero.title', 'Trang chủ', 'Tiêu đề hero', 'Chào mừng đến với Souvenir Shop', 'TEXT', 1, 10),
+                    ('home.hero.subtitle', 'Trang chủ', 'Mô tả hero', 'Khám phá những món quà lưu niệm độc đáo, mang đậm dấu ấn văn hóa Việt Nam', 'TEXTAREA', 1, 20),
+                    ('home.hero.badge1', 'Trang chủ', 'Badge hero 1', 'Giao hàng toàn quốc', 'TEXT', 1, 30),
+                    ('home.hero.badge2', 'Trang chủ', 'Badge hero 2', 'Thanh toán an toàn', 'TEXT', 1, 40),
+                    ('home.hero.badge3', 'Trang chủ', 'Badge hero 3', 'Nhiều mẫu và biến thể', 'TEXT', 1, 50),
+                    ('home.latest.title', 'Trang chủ', 'Tiêu đề block sản phẩm mới', 'Sản phẩm mới nhất', 'TEXT', 1, 60),
+                    ('home.latest.cta', 'Trang chủ', 'Nút xem tất cả sản phẩm', 'Xem tất cả sản phẩm', 'TEXT', 1, 70),
+                    ('footer.brand.title', 'Footer', 'Tên thương hiệu footer', 'Souvenir Shop', 'TEXT', 1, 80),
+                    ('footer.brand.description', 'Footer', 'Mô tả thương hiệu footer', 'Cửa hàng đồ lưu niệm Việt Nam với sản phẩm tinh tế, phù hợp làm quà tặng và lưu giữ kỷ niệm.', 'TEXTAREA', 1, 90),
+                    ('footer.contact.address', 'Footer', 'Địa chỉ liên hệ', 'Hà Nội, Việt Nam', 'TEXT', 1, 100),
+                    ('footer.contact.phone', 'Footer', 'Số điện thoại liên hệ', 'Hotline: 09xx xxx xxx', 'TEXT', 1, 110),
+                    ('footer.contact.email', 'Footer', 'Email liên hệ', 'support@souvenirshop.vn', 'TEXT', 1, 120),
+                    ('footer.copyright', 'Footer', 'Dòng bản quyền', 'Souvenir Shop - Website bán đồ lưu niệm Việt Nam', 'TEXT', 1, 130)
+                    ON DUPLICATE KEY UPDATE content_key = content_key
+                    """);
         }
     }
 

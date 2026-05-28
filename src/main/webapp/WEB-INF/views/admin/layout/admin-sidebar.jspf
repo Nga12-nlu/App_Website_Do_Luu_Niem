@@ -38,6 +38,12 @@
                     <span>Người dùng</span>
                 </a>
             </li>
+            <li class="admin-nav-item">
+                <a href="${pageContext.request.contextPath}/admin/contents" class="admin-nav-link ${pageTitle eq 'Nội dung tĩnh website' or pageTitle eq 'Sửa nội dung tĩnh' ? 'active' : ''}">
+                    <i class="fas fa-file-lines"></i>
+                    <span>Nội dung tĩnh</span>
+                </a>
+            </li>
         </ul>
     </nav>
 </aside>

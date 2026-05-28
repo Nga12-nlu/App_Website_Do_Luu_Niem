@@ -5,12 +5,12 @@
 <%@ include file="/WEB-INF/views/layout/header.jspf" %>
 
 <div class="hero-section text-center">
-    <h1><i class="fas fa-store me-2"></i>Chào mừng đến với Souvenir Shop</h1>
-    <p class="lead">Khám phá những món quà lưu niệm độc đáo, mang đậm dấu ấn văn hóa Việt Nam</p>
+    <h1><i class="fas fa-store me-2"></i>${siteContent['home.hero.title']}</h1>
+    <p class="lead">${siteContent['home.hero.subtitle']}</p>
     <div class="hero-badges">
-        <span class="badge bg-light text-dark"><i class="fas fa-truck me-1"></i>Giao hàng toàn quốc</span>
-        <span class="badge bg-light text-dark"><i class="fas fa-shield-alt me-1"></i>Thanh toán an toàn</span>
-        <span class="badge bg-light text-dark"><i class="fas fa-palette me-1"></i>Nhiều mẫu &amp; biến thể</span>
+        <span class="badge bg-light text-dark"><i class="fas fa-truck me-1"></i>${siteContent['home.hero.badge1']}</span>
+        <span class="badge bg-light text-dark"><i class="fas fa-shield-alt me-1"></i>${siteContent['home.hero.badge2']}</span>
+        <span class="badge bg-light text-dark"><i class="fas fa-palette me-1"></i>${siteContent['home.hero.badge3']}</span>
     </div>
 </div>
 
@@ -38,7 +38,7 @@
     </div>
 </c:if>
 
-<h4 class="section-title"><i class="fas fa-star me-2 text-warning"></i>Sản phẩm mới nhất</h4>
+<h4 class="section-title"><i class="fas fa-star me-2 text-warning"></i>${siteContent['home.latest.title']}</h4>
 <c:choose>
     <c:when test="${empty latestProducts}">
         <div class="alert alert-info">Chưa có sản phẩm nào.</div>
@@ -82,7 +82,7 @@
             </c:forEach>
         </div>
         <div class="mt-5 text-center">
-            <a href="${pageContext.request.contextPath}/products" class="btn btn-souvenir">Xem tất cả sản phẩm</a>
+            <a href="${pageContext.request.contextPath}/products" class="btn btn-souvenir">${siteContent['home.latest.cta']}</a>
         </div>
     </c:otherwise>
 </c:choose>

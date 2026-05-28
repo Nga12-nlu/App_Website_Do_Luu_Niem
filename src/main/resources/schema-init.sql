@@ -53,6 +53,18 @@ CREATE TABLE IF NOT EXISTS product_variants (
     CONSTRAINT fk_pv_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS static_contents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    content_key VARCHAR(120) NOT NULL UNIQUE,
+    group_name VARCHAR(60) NOT NULL,
+    label VARCHAR(255) NOT NULL,
+    content_value TEXT NOT NULL,
+    input_type VARCHAR(20) NOT NULL DEFAULT 'TEXT',
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 0,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -95,6 +107,22 @@ INSERT IGNORE INTO categories (name, description) VALUES
 ('Văn phòng phẩm lưu niệm', 'Sổ, bút, bookmark và phụ kiện bàn làm việc'),
 ('Quà tặng doanh nghiệp', 'Hộp quà, set quà tặng đối tác'),
 ('Ẩm thực đặc sản', 'Trà, cà phê, đặc sản khô đóng gói quà tặng');
+
+INSERT INTO static_contents (content_key, group_name, label, content_value, input_type, active, sort_order) VALUES
+('home.hero.title', 'Trang chủ', 'Tiêu đề hero', 'Chào mừng đến với Souvenir Shop', 'TEXT', 1, 10),
+('home.hero.subtitle', 'Trang chủ', 'Mô tả hero', 'Khám phá những món quà lưu niệm độc đáo, mang đậm dấu ấn văn hóa Việt Nam', 'TEXTAREA', 1, 20),
+('home.hero.badge1', 'Trang chủ', 'Badge hero 1', 'Giao hàng toàn quốc', 'TEXT', 1, 30),
+('home.hero.badge2', 'Trang chủ', 'Badge hero 2', 'Thanh toán an toàn', 'TEXT', 1, 40),
+('home.hero.badge3', 'Trang chủ', 'Badge hero 3', 'Nhiều mẫu và biến thể', 'TEXT', 1, 50),
+('home.latest.title', 'Trang chủ', 'Tiêu đề block sản phẩm mới', 'Sản phẩm mới nhất', 'TEXT', 1, 60),
+('home.latest.cta', 'Trang chủ', 'Nút xem tất cả sản phẩm', 'Xem tất cả sản phẩm', 'TEXT', 1, 70),
+('footer.brand.title', 'Footer', 'Tên thương hiệu footer', 'Souvenir Shop', 'TEXT', 1, 80),
+('footer.brand.description', 'Footer', 'Mô tả thương hiệu footer', 'Cửa hàng đồ lưu niệm Việt Nam với sản phẩm tinh tế, phù hợp làm quà tặng và lưu giữ kỷ niệm.', 'TEXTAREA', 1, 90),
+('footer.contact.address', 'Footer', 'Địa chỉ liên hệ', 'Hà Nội, Việt Nam', 'TEXT', 1, 100),
+('footer.contact.phone', 'Footer', 'Số điện thoại liên hệ', 'Hotline: 09xx xxx xxx', 'TEXT', 1, 110),
+('footer.contact.email', 'Footer', 'Email liên hệ', 'support@souvenirshop.vn', 'TEXT', 1, 120),
+('footer.copyright', 'Footer', 'Dòng bản quyền', 'Souvenir Shop - Website bán đồ lưu niệm Việt Nam', 'TEXT', 1, 130)
+ON DUPLICATE KEY UPDATE content_key = content_key;
 
 INSERT INTO products (name, description, price, stock, image_url, category_id) VALUES
 ('Tượng Rùa Vàng', 'Tượng rùa vàng phong thủy mang lại may mắn', 250000, 50, 'https://via.placeholder.com/300x300?text=Tuong+Rua', 1),
