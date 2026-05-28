@@ -1127,6 +1127,16 @@
     vertical-align: middle;
 }
 
+.admin-badge-nowrap {
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+}
+
+.content-status-col {
+    min-width: 120px;
+}
+
 .cat-profile-card .cat-detail-desc {
     font-size: 0.95rem;
     line-height: 1.5;

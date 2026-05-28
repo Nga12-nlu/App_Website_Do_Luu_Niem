@@ -85,7 +85,7 @@
             <th>Nhãn hiển thị</th>
             <th>Khóa</th>
             <th>Giá trị</th>
-            <th>Trạng thái</th>
+            <th class="content-status-col">Trạng thái</th>
             <th style="width: 100px;">Thao tác</th>
         </tr>
         </thead>
@@ -115,8 +115,8 @@
                                 </c:otherwise>
                             </c:choose>
                         </td>
-                        <td>
-                            <span class="admin-badge ${it.active ? 'admin-badge-success' : 'admin-badge-warning'}">
+                        <td class="content-status-col">
+                            <span class="admin-badge admin-badge-nowrap ${it.active ? 'admin-badge-success' : 'admin-badge-warning'}">
                                 ${it.active ? 'Hiển thị' : 'Đang tắt'}
                             </span>
                         </td>
