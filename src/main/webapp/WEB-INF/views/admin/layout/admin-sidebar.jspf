@@ -27,6 +27,12 @@
                 </a>
             </li>
             <li class="admin-nav-item">
+                <a href="${pageContext.request.contextPath}/admin/coupons" class="admin-nav-link ${pageTitle eq 'Quản lý mã giảm giá' or pageTitle eq 'Thêm mã giảm giá' or pageTitle eq 'Sửa mã giảm giá' ? 'active' : ''}">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Mã giảm giá</span>
+                </a>
+            </li>
+            <li class="admin-nav-item">
                 <a href="${pageContext.request.contextPath}/admin/categories" class="admin-nav-link ${pageTitle eq 'Quản lý danh mục' or pageTitle eq 'Thêm danh mục' or pageTitle eq 'Sửa danh mục' or pageTitle eq 'Chi tiết danh mục' ? 'active' : ''}">
                     <i class="fas fa-tags"></i>
                     <span>Danh mục</span>

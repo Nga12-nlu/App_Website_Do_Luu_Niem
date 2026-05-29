@@ -71,6 +71,7 @@ public class DatabaseInitializer implements ServletContextListener {
             migratePasswordResetIfNeeded(sce);
             migrateGoogleOAuthIfNeeded(sce);
             migrateVnpayIfNeeded(sce);
+            migrateCheckoutEnhancementsIfNeeded(sce);
             migrateStaticContentsIfNeeded(sce);
         } catch (Exception e) {
             sce.getServletContext().log("Không thể khởi tạo database: " + e.getMessage(), e);
@@ -182,6 +183,94 @@ public class DatabaseInitializer implements ServletContextListener {
             } catch (Exception ignored) {
                 // Index đã tồn tại
             }
+        }
+    }
+
+    private void migrateCheckoutEnhancementsIfNeeded(ServletContextEvent sce) throws Exception {
+        if (!tableExists("orders")) {
+            return;
+        }
+        try (Connection conn = DBConnection.getConnection();
+             Statement st = conn.createStatement()) {
+            if (!tableExists("coupons")) {
+                st.execute("""
+                        CREATE TABLE IF NOT EXISTS coupons (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            code VARCHAR(50) NOT NULL UNIQUE,
+                            description VARCHAR(255) NULL,
+                            discount_type VARCHAR(20) NOT NULL,
+                            discount_value DECIMAL(15,2) NOT NULL,
+                            min_order_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+                            max_discount DECIMAL(15,2) NULL,
+                            usage_limit INT NULL,
+                            used_count INT NOT NULL DEFAULT 0,
+                            per_user_limit INT NOT NULL DEFAULT 1,
+                            starts_at DATETIME NULL,
+                            expires_at DATETIME NULL,
+                            active TINYINT(1) NOT NULL DEFAULT 1,
+                            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                        )
+                        """);
+                st.execute("""
+                        CREATE TABLE IF NOT EXISTS coupon_usages (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            coupon_id INT NOT NULL,
+                            user_id INT NOT NULL,
+                            order_id INT NULL,
+                            used_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                            INDEX idx_cu_coupon_user (coupon_id, user_id),
+                            CONSTRAINT fk_cu_coupon FOREIGN KEY (coupon_id) REFERENCES coupons(id),
+                            CONSTRAINT fk_cu_user FOREIGN KEY (user_id) REFERENCES users(id)
+                        )
+                        """);
+                st.execute("""
+                        INSERT INTO coupons (code, description, discount_type, discount_value, min_order_amount,
+                        max_discount, usage_limit, per_user_limit, active) VALUES
+                        ('WELCOME10', 'Giảm 10% cho đơn đầu (tối đa 50k)', 'PERCENT', 10, 200000, 50000, 1000, 1, 1),
+                        ('GIAM50K', 'Giảm 50.000đ cho đơn từ 300k', 'FIXED', 50000, 300000, NULL, 500, 2, 1),
+                        ('FREESHIP', 'Miễn phí ship (giảm 30k phí ship)', 'FIXED', 30000, 150000, NULL, 200, 1, 1)
+                        ON DUPLICATE KEY UPDATE code = code
+                        """);
+                sce.getServletContext().log("Đã tạo bảng coupons và mã mẫu.");
+            } else {
+                seedCouponsIfEmpty(st);
+            }
+            addOrderColumnIfMissing(conn, st, sce, "subtotal", "DECIMAL(15,2) NULL");
+            addOrderColumnIfMissing(conn, st, sce, "discount_amount", "DECIMAL(15,2) NOT NULL DEFAULT 0");
+            addOrderColumnIfMissing(conn, st, sce, "shipping_fee", "DECIMAL(15,2) NOT NULL DEFAULT 0");
+            addOrderColumnIfMissing(conn, st, sce, "coupon_id", "INT NULL");
+            addOrderColumnIfMissing(conn, st, sce, "coupon_code", "VARCHAR(50) NULL");
+            addOrderColumnIfMissing(conn, st, sce, "receiver_name", "VARCHAR(255) NULL");
+            addOrderColumnIfMissing(conn, st, sce, "customer_note", "VARCHAR(500) NULL");
+            addOrderColumnIfMissing(conn, st, sce, "province_code", "VARCHAR(20) NULL");
+            addOrderColumnIfMissing(conn, st, sce, "province_name", "VARCHAR(120) NULL");
+            addOrderColumnIfMissing(conn, st, sce, "district_code", "VARCHAR(20) NULL");
+            addOrderColumnIfMissing(conn, st, sce, "district_name", "VARCHAR(120) NULL");
+            addOrderColumnIfMissing(conn, st, sce, "ward_code", "VARCHAR(20) NULL");
+            addOrderColumnIfMissing(conn, st, sce, "ward_name", "VARCHAR(120) NULL");
+            addOrderColumnIfMissing(conn, st, sce, "address_detail", "VARCHAR(500) NULL");
+        }
+    }
+
+    private void seedCouponsIfEmpty(Statement st) throws Exception {
+        try (var rs = st.executeQuery("SELECT COUNT(*) FROM coupons")) {
+            if (rs.next() && rs.getInt(1) == 0) {
+                st.execute("""
+                        INSERT INTO coupons (code, description, discount_type, discount_value, min_order_amount,
+                        max_discount, usage_limit, per_user_limit, active) VALUES
+                        ('WELCOME10', 'Giảm 10% cho đơn đầu (tối đa 50k)', 'PERCENT', 10, 200000, 50000, 1000, 1, 1),
+                        ('GIAM50K', 'Giảm 50.000đ cho đơn từ 300k', 'FIXED', 50000, 300000, NULL, 500, 2, 1),
+                        ('FREESHIP', 'Giảm 30k phí ship', 'FIXED', 30000, 150000, NULL, 200, 1, 1)
+                        """);
+            }
+        }
+    }
+
+    private void addOrderColumnIfMissing(Connection conn, Statement st, ServletContextEvent sce,
+                                         String column, String ddl) throws Exception {
+        if (!columnExists(conn, "orders", column)) {
+            st.execute("ALTER TABLE orders ADD COLUMN " + column + " " + ddl);
+            sce.getServletContext().log("Đã thêm cột orders." + column);
         }
     }
 

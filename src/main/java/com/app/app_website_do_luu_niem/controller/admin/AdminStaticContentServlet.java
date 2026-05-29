@@ -3,6 +3,7 @@ package com.app.app_website_do_luu_niem.controller.admin;
 import com.app.app_website_do_luu_niem.dao.StaticContentDao;
 import com.app.app_website_do_luu_niem.dao.impl.StaticContentDaoImpl;
 import com.app.app_website_do_luu_niem.model.StaticContent;
+import com.app.app_website_do_luu_niem.service.StaticContentService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -18,6 +19,7 @@ public class AdminStaticContentServlet extends HttpServlet {
 
     private static final int MAX_VALUE_LENGTH = 5000;
     private final StaticContentDao staticContentDao = new StaticContentDaoImpl();
+    private final StaticContentService staticContentService = new StaticContentService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -66,6 +68,7 @@ public class AdminStaticContentServlet extends HttpServlet {
         item.setValue(value);
         item.setActive(active);
         staticContentDao.update(item);
+        staticContentService.invalidateCache();
         resp.sendRedirect(req.getContextPath() + "/admin/contents?msg=updated");
     }
 

@@ -5,8 +5,12 @@ import com.app.app_website_do_luu_niem.dao.ProductVariantDao;
 import com.app.app_website_do_luu_niem.dao.impl.ProductDaoImpl;
 import com.app.app_website_do_luu_niem.dao.impl.ProductVariantDaoImpl;
 import com.app.app_website_do_luu_niem.model.CartItem;
+import com.app.app_website_do_luu_niem.model.CheckoutQuote;
 import com.app.app_website_do_luu_niem.model.Product;
 import com.app.app_website_do_luu_niem.model.ProductVariant;
+import com.app.app_website_do_luu_niem.model.User;
+import com.app.app_website_do_luu_niem.service.CheckoutService;
+import com.app.app_website_do_luu_niem.service.CouponService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -26,13 +30,20 @@ public class CartServlet extends HttpServlet {
 
     private final ProductDao productDao = new ProductDaoImpl();
     private final ProductVariantDao variantDao = new ProductVariantDaoImpl();
+    private final CheckoutService checkoutService = new CheckoutService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         HttpSession session = req.getSession(true);
         List<CartItem> cart = getCart(session);
+        checkoutService.refreshCartFromDatabase(cart);
+        User user = (User) session.getAttribute("currentUser");
+        Integer userId = user != null ? user.getId() : null;
+        String couponCode = (String) session.getAttribute(CouponService.SESSION_APPLIED_COUPON);
+        CheckoutQuote quote = checkoutService.buildQuote(cart, couponCode, userId, null);
         req.setAttribute("cartItems", cart);
-        req.setAttribute("totalAmount", calculateTotal(cart));
+        req.setAttribute("totalAmount", quote.getSubtotal());
+        req.setAttribute("quote", quote);
         req.getRequestDispatcher("/WEB-INF/views/shop/cart.jsp").forward(req, resp);
     }
 

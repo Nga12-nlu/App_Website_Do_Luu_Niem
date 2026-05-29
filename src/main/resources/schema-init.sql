@@ -1,7 +1,8 @@
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NULL,
+    google_id VARCHAR(255) NULL UNIQUE,
     full_name VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL DEFAULT 'CUSTOMER',
     active TINYINT(1) NOT NULL DEFAULT 1,
@@ -65,20 +66,68 @@ CREATE TABLE IF NOT EXISTS static_contents (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS coupons (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(255) NULL,
+    discount_type VARCHAR(20) NOT NULL,
+    discount_value DECIMAL(15,2) NOT NULL,
+    min_order_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+    max_discount DECIMAL(15,2) NULL,
+    usage_limit INT NULL,
+    used_count INT NOT NULL DEFAULT 0,
+    per_user_limit INT NOT NULL DEFAULT 1,
+    starts_at DATETIME NULL,
+    expires_at DATETIME NULL,
+    active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS coupon_usages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    coupon_id INT NOT NULL,
+    user_id INT NOT NULL,
+    order_id INT NULL,
+    used_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_cu_coupon_user (coupon_id, user_id),
+    CONSTRAINT fk_cu_coupon FOREIGN KEY (coupon_id) REFERENCES coupons(id),
+    CONSTRAINT fk_cu_user FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    subtotal DECIMAL(15,2) NULL,
+    discount_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+    shipping_fee DECIMAL(15,2) NOT NULL DEFAULT 0,
     total_amount DECIMAL(15,2) NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
     payment_method VARCHAR(20) NOT NULL DEFAULT 'COD',
     vnpay_txn_ref VARCHAR(64) NULL,
     vnpay_transaction_no VARCHAR(64) NULL,
     paid_at DATETIME NULL,
+    coupon_id INT NULL,
+    coupon_code VARCHAR(50) NULL,
+    receiver_name VARCHAR(255) NULL,
+    customer_note VARCHAR(500) NULL,
+    province_code VARCHAR(20) NULL,
+    province_name VARCHAR(120) NULL,
+    district_code VARCHAR(20) NULL,
+    district_name VARCHAR(120) NULL,
+    ward_code VARCHAR(20) NULL,
+    ward_name VARCHAR(120) NULL,
+    address_detail VARCHAR(500) NULL,
     shipping_address VARCHAR(500) NOT NULL,
     phone VARCHAR(50) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+INSERT IGNORE INTO coupons (code, description, discount_type, discount_value, min_order_amount,
+    max_discount, usage_limit, per_user_limit, active) VALUES
+('WELCOME10', 'Giảm 10% cho đơn đầu (tối đa 50k)', 'PERCENT', 10, 200000, 50000, 1000, 1, 1),
+('GIAM50K', 'Giảm 50.000đ cho đơn từ 300k', 'FIXED', 50000, 300000, NULL, 500, 2, 1),
+('FREESHIP', 'Giảm 30k phí ship', 'FIXED', 30000, 150000, NULL, 200, 1, 1);
 
 CREATE TABLE IF NOT EXISTS order_items (
     id INT AUTO_INCREMENT PRIMARY KEY,

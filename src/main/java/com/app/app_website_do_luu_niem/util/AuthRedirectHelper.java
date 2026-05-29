@@ -28,12 +28,22 @@ public final class AuthRedirectHelper {
         }
     }
 
-    /** Chỉ cho phép redirect nội bộ (cùng context path). */
+    /** Chỉ cho phép redirect nội bộ (cùng context path), chặn open redirect. */
     public static boolean isSafeRedirect(HttpServletRequest req, String redirect) {
         if (redirect == null || redirect.isBlank()) {
             return false;
         }
         String ctx = req.getContextPath();
-        return redirect.startsWith(ctx + "/") || redirect.equals(ctx);
+        if (!redirect.startsWith(ctx)) {
+            return false;
+        }
+        if (redirect.equals(ctx)) {
+            return true;
+        }
+        String path = redirect.substring(ctx.length());
+        if (!path.startsWith("/") || path.startsWith("//") || path.contains("://")) {
+            return false;
+        }
+        return true;
     }
 }

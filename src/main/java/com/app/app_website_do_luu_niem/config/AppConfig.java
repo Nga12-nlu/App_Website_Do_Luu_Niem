@@ -133,6 +133,45 @@ public final class AppConfig {
         return nullToEmpty(PROPS.getProperty("vnpay.ipn.url"));
     }
 
+    public static String getAddressApiProvider() {
+        String p = nullToEmpty(PROPS.getProperty("address.api.provider", "open-api"));
+        return p.isEmpty() ? "open-api" : p;
+    }
+
+    public static java.math.BigDecimal getShippingBaseFee() {
+        return parseDecimal(PROPS.getProperty("shipping.base.fee"), "30000");
+    }
+
+    public static java.math.BigDecimal getShippingFreeThreshold() {
+        return parseDecimal(PROPS.getProperty("shipping.free.threshold"), "500000");
+    }
+
+    public static java.math.BigDecimal getShippingRemoteSurcharge() {
+        return parseDecimal(PROPS.getProperty("shipping.remote.surcharge"), "15000");
+    }
+
+    public static boolean isRemoteProvince(String provinceCode) {
+        if (provinceCode == null || provinceCode.isBlank()) {
+            return false;
+        }
+        String list = PROPS.getProperty("shipping.remote.provinces", "96,97");
+        for (String code : list.split(",")) {
+            if (provinceCode.trim().equals(code.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static java.math.BigDecimal parseDecimal(String value, String defaultValue) {
+        try {
+            String v = value != null && !value.isBlank() ? value.trim() : defaultValue;
+            return new java.math.BigDecimal(v);
+        } catch (Exception e) {
+            return new java.math.BigDecimal(defaultValue);
+        }
+    }
+
     private static String nullToEmpty(String s) {
         return s != null ? s.trim() : "";
     }

@@ -31,15 +31,48 @@
                         </div>
                         <div class="order-info-value">#${order.id}</div>
                     </div>
+                    <c:if test="${order.subtotal != null}">
+                        <div class="order-info-row">
+                            <div class="order-info-label"><i class="fas fa-shopping-basket"></i><span>Tạm tính</span></div>
+                            <div class="order-info-value">
+                                <span class="price-value" data-price="${order.subtotal}">${order.subtotal}</span> &#8363;
+                            </div>
+                        </div>
+                    </c:if>
+                    <c:if test="${order.discountAmount != null and order.discountAmount > 0}">
+                        <div class="order-info-row">
+                            <div class="order-info-label"><i class="fas fa-ticket-alt"></i><span>Giảm giá</span></div>
+                            <div class="order-info-value text-success">
+                                -<span class="price-value" data-price="${order.discountAmount}">${order.discountAmount}</span> &#8363;
+                                <c:if test="${not empty order.couponCode}">
+                                    <small class="d-block">(<c:out value="${order.couponCode}"/>)</small>
+                                </c:if>
+                            </div>
+                        </div>
+                    </c:if>
+                    <c:if test="${order.shippingFee != null}">
+                        <div class="order-info-row">
+                            <div class="order-info-label"><i class="fas fa-truck"></i><span>Phí ship</span></div>
+                            <div class="order-info-value">
+                                <span class="price-value" data-price="${order.shippingFee}">${order.shippingFee}</span> &#8363;
+                            </div>
+                        </div>
+                    </c:if>
                     <div class="order-info-row">
                         <div class="order-info-label">
                             <i class="fas fa-money-bill-wave"></i>
-                            <span>Tổng tiền</span>
+                            <span>Tổng thanh toán</span>
                         </div>
                         <div class="order-info-value">
-                            <span class="price-value" data-price="${order.totalAmount}">${order.totalAmount}</span> &#8363;
+                            <strong><span class="price-value" data-price="${order.totalAmount}">${order.totalAmount}</span> &#8363;</strong>
                         </div>
                     </div>
+                    <c:if test="${not empty order.receiverName}">
+                        <div class="order-info-row">
+                            <div class="order-info-label"><i class="fas fa-user"></i><span>Người nhận</span></div>
+                            <div class="order-info-value"><c:out value="${order.receiverName}"/></div>
+                        </div>
+                    </c:if>
                     <div class="order-info-row">
                         <div class="order-info-label">
                             <i class="fas fa-wallet"></i>

@@ -57,13 +57,24 @@ public class OrderSuccessServlet extends HttpServlet {
     private boolean canViewOrder(HttpServletRequest req, Order order) {
         HttpSession session = req.getSession(false);
         if (session == null) {
-            return true;
+            return false;
         }
         User user = (User) session.getAttribute("currentUser");
         if (user == null) {
+            return false;
+        }
+        if (user.isAdminRole()) {
             return true;
         }
-        return order.getUser() != null && order.getUser().getId() == user.getId();
+        if (order.getUser() != null && order.getUser().getId() == user.getId()) {
+            return true;
+        }
+        String txnRef = req.getParameter("txnRef");
+        if (txnRef != null && txnRef.equals(order.getVnpayTxnRef())) {
+            Object pending = session.getAttribute("vnpayPendingOrderId");
+            return pending instanceof Integer pendingId && pendingId == order.getId();
+        }
+        return false;
     }
 
     private static String mapPaymentNotice(String payment) {

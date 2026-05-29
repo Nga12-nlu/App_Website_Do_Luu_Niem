@@ -25,6 +25,7 @@ public class PaymentService {
     }
 
     private final OrderDao orderDao = new OrderDaoImpl();
+    private final CouponService couponService = new CouponService();
 
     public VnpayConfirmResult confirmVnpayCallback(Map<String, String> params) {
         if (params == null || params.isEmpty()) {
@@ -79,6 +80,7 @@ public class PaymentService {
 
         if ("CONFIRMED".equalsIgnoreCase(order.getStatus())
                 || "SHIPPED".equalsIgnoreCase(order.getStatus())) {
+            fulfillCouponIfNeeded(order);
             return VnpayConfirmResult.ALREADY_CONFIRMED;
         }
 
@@ -94,6 +96,7 @@ public class PaymentService {
 
         BigDecimal paidAmount = VNPayService.amountFromVnpayParam(amountRaw);
         if (orderDao.markVnpayPaid(order.getId(), transactionNo, paidAmount)) {
+            fulfillCouponIfNeeded(order);
             return VnpayConfirmResult.SUCCESS;
         }
         Optional<Order> refreshed = orderDao.findById(order.getId());
@@ -107,5 +110,17 @@ public class PaymentService {
     public Optional<Order> findOrderForUser(int orderId, int userId) {
         return orderDao.findById(orderId)
                 .filter(o -> o.getUser() != null && o.getUser().getId() == userId);
+    }
+
+    private void fulfillCouponIfNeeded(Order order) {
+        if (order.getCouponId() == null || order.getUser() == null) {
+            return;
+        }
+        try {
+            couponService.recordOrderUsage(order.getCouponId(), order.getUser().getId(), order.getId());
+        } catch (RuntimeException e) {
+            // Đơn đã thanh toán; ghi log, không hủy xác nhận thanh toán.
+            System.err.println("Coupon fulfillment failed for order " + order.getId() + ": " + e.getMessage());
+        }
     }
 }

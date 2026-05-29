@@ -8,16 +8,32 @@ import java.util.Map;
 
 public class StaticContentService {
 
+    private static final long CACHE_TTL_MS = 60_000L;
+
     private final StaticContentDao staticContentDao = new StaticContentDaoImpl();
+    private volatile Map<String, String> cachedMap;
+    private volatile long cacheLoadedAt;
 
     public Map<String, String> resolveContentMap() {
+        long now = System.currentTimeMillis();
+        Map<String, String> hit = cachedMap;
+        if (hit != null && now - cacheLoadedAt < CACHE_TTL_MS) {
+            return hit;
+        }
         Map<String, String> merged = defaultContentMap();
         try {
             merged.putAll(staticContentDao.findActiveMap());
         } catch (Exception ignored) {
             // DB chưa sẵn sàng hoặc lỗi tạm thời: giữ fallback mặc định để site vẫn chạy.
         }
+        cachedMap = merged;
+        cacheLoadedAt = now;
         return merged;
+    }
+
+    public void invalidateCache() {
+        cachedMap = null;
+        cacheLoadedAt = 0;
     }
 
     public static Map<String, String> defaultContentMap() {

@@ -32,10 +32,22 @@
                         <strong>Email:</strong><br>
                         <c:out value="${order.user.email}"/>
                     </div>
+                    <c:if test="${not empty order.receiverName}">
+                        <div class="col-md-6 mb-3">
+                            <strong>Người nhận:</strong><br>
+                            <c:out value="${order.receiverName}"/>
+                        </div>
+                    </c:if>
                     <div class="col-12 mb-3">
                         <strong>Địa chỉ:</strong><br>
                         <c:out value="${order.shippingAddress}"/>
                     </div>
+                    <c:if test="${not empty order.customerNote}">
+                        <div class="col-12 mb-3">
+                            <strong>Ghi chú:</strong><br>
+                            <c:out value="${order.customerNote}"/>
+                        </div>
+                    </c:if>
                     <div class="col-md-6 mb-3">
                         <strong>Điện thoại:</strong><br>
                         <c:out value="${order.phone}"/>
@@ -132,7 +144,7 @@
                     </div>
                 </div>
                 
-                <form method="get" action="${pageContext.request.contextPath}/admin/orders" id="statusForm">
+                <form method="post" action="${pageContext.request.contextPath}/admin/orders" id="statusForm">
                     <input type="hidden" name="action" value="update-status">
                     <input type="hidden" name="id" value="${order.id}">
                     <div class="mb-3">
@@ -151,8 +163,26 @@
                 
                 <hr>
                 
+                <c:if test="${order.subtotal != null}">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tạm tính</span>
+                        <span><span class="price-value" data-price="${order.subtotal}">${order.subtotal}</span>đ</span>
+                    </div>
+                </c:if>
+                <c:if test="${order.discountAmount != null and order.discountAmount > 0}">
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>Giảm giá <c:if test="${not empty order.couponCode}">(<c:out value="${order.couponCode}"/>)</c:if></span>
+                        <span>-<span class="price-value" data-price="${order.discountAmount}">${order.discountAmount}</span>đ</span>
+                    </div>
+                </c:if>
+                <c:if test="${order.shippingFee != null}">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Phí ship</span>
+                        <span><span class="price-value" data-price="${order.shippingFee}">${order.shippingFee}</span>đ</span>
+                    </div>
+                </c:if>
                 <div class="mt-3">
-                    <strong>Tổng tiền:</strong>
+                    <strong>Tổng thanh toán:</strong>
                     <h4 class="text-primary mb-0">
                         <span class="price-value" data-price="${order.totalAmount}">${order.totalAmount}</span> &#8363;
                     </h4>

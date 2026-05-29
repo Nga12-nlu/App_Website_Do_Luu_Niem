@@ -3,6 +3,7 @@
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <c:set var="pageTitle" value="Giỏ hàng"/>
 <%@ include file="/WEB-INF/views/layout/header.jspf" %>
+<link href="${pageContext.request.contextPath}/css/checkout.css?v=1" rel="stylesheet">
 
 <h4 class="section-title mb-4"><i class="fas fa-shopping-cart me-2 text-primary"></i>Giỏ hàng</h4>
 
@@ -14,6 +15,33 @@
         </div>
     </c:when>
     <c:otherwise>
+        <div class="cart-coupon-panel">
+            <div class="row align-items-end g-2">
+                <div class="col-md-8">
+                    <label class="form-label fw-semibold mb-1" for="cartCouponCode">
+                        <i class="fas fa-ticket-alt me-1 text-primary"></i>Mã giảm giá
+                    </label>
+                    <input type="text" class="form-control text-uppercase" id="cartCouponCode" maxlength="32"
+                           placeholder="VD: WELCOME10, GIAM50K"
+                           value="${quote.couponApplied ? quote.couponCode : ''}">
+                    <div id="cartCouponMessage" class="form-text mt-1 ${quote.couponApplied ? 'text-success' : ''}">
+                        <c:if test="${not empty quote.couponMessage}"><c:out value="${quote.couponMessage}"/></c:if>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="button" class="btn btn-outline-primary flex-grow-1" id="cartBtnApplyCoupon">Áp dụng</button>
+                    <button type="button" class="btn btn-outline-secondary" id="cartBtnRemoveCoupon"
+                            style="${quote.couponApplied ? '' : 'display:none;'}">Xóa</button>
+                </div>
+            </div>
+            <c:if test="${quote.couponApplied}">
+                <div class="small text-muted mt-2">
+                    Giảm <span class="price-value" data-price="${quote.discountAmount}">${quote.discountAmount}</span>đ
+                    (áp dụng khi thanh toán)
+                </div>
+            </c:if>
+        </div>
+
         <form method="post" action="${pageContext.request.contextPath}/cart">
             <input type="hidden" name="action" value="update">
             <div class="table-responsive cart-table-wrap">
@@ -92,6 +120,46 @@
 </c:choose>
 
 <script>
+(function() {
+    var base = '${pageContext.request.contextPath}';
+    var btnApply = document.getElementById('cartBtnApplyCoupon');
+    var btnRemove = document.getElementById('cartBtnRemoveCoupon');
+    if (btnApply) {
+        btnApply.addEventListener('click', function() {
+            var code = document.getElementById('cartCouponCode').value.trim();
+            var body = new URLSearchParams();
+            body.set('code', code);
+            fetch(base + '/api/coupon/apply', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body.toString()
+            }).then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+              .then(function(res) {
+                var msg = document.getElementById('cartCouponMessage');
+                if (!res.ok) {
+                    msg.textContent = res.data.message || 'Mã không hợp lệ';
+                    msg.className = 'form-text mt-1 text-danger';
+                    return;
+                }
+                msg.textContent = res.data.message || 'Đã áp dụng mã';
+                msg.className = 'form-text mt-1 text-success';
+                if (btnRemove) btnRemove.style.display = '';
+                location.reload();
+              });
+        });
+    }
+    if (btnRemove) {
+        btnRemove.addEventListener('click', function() {
+            fetch(base + '/api/coupon/remove', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: ''
+            }).then(function() { location.reload(); });
+        });
+    }
+})();
 document.addEventListener('DOMContentLoaded', function() {
     var quantityInputs = document.querySelectorAll('input[name="cartQuantity"]');
     quantityInputs.forEach(function(input) {

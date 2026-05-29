@@ -67,11 +67,22 @@
                                     <c:otherwise>COD</c:otherwise>
                                 </c:choose>
                             </div>
+                            <c:if test="${not empty order.couponCode}">
+                                <p class="mb-2 small text-success">
+                                    <i class="fas fa-ticket-alt me-1"></i>Mã: <c:out value="${order.couponCode}"/>
+                                    <c:if test="${order.discountAmount != null and order.discountAmount > 0}">
+                                        · Giảm <span class="price-value" data-price="${order.discountAmount}">${order.discountAmount}</span>đ
+                                    </c:if>
+                                </p>
+                            </c:if>
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div>
                                     <strong class="fs-5">
-                                        Tổng tiền: <span class="price-value" data-price="${order.totalAmount}">${order.totalAmount}</span> &#8363;
+                                        Tổng: <span class="price-value" data-price="${order.totalAmount}">${order.totalAmount}</span> &#8363;
                                     </strong>
+                                    <c:if test="${order.shippingFee != null}">
+                                        <small class="text-muted d-block">Đã gồm phí ship</small>
+                                    </c:if>
                                 </div>
                                 <div class="d-flex gap-2 flex-wrap">
                                     <c:if test="${order.vnpay and order.status eq 'PENDING'}">

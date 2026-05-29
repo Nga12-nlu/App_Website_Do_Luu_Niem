@@ -11,6 +11,9 @@ public interface OrderDao {
 
     void saveWithItems(Order order);
 
+    /** @param deductStock false cho VNPay: chỉ kiểm tra tồn, trừ kho khi thanh toán thành công */
+    void saveWithItems(Order order, boolean deductStock);
+
     List<Order> findAll();
 
     List<Order> findAll(int page, int pageSize, String status, String search);

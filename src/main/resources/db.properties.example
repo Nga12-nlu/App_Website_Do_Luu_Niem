@@ -36,3 +36,17 @@ vnpay.version=2.1.0
 # Để trống = tự suy ra từ app.public.base.url
 vnpay.return.url=
 vnpay.ipn.url=
+
+# --- Phí vận chuyển & địa chỉ ---
+# Phí ship cơ bản (đồng), miễn phí khi tạm tính (sau giảm) >= ngưỡng
+shipping.base.fee=30000
+shipping.free.threshold=500000
+# Phụ phí vùng xa (mã tỉnh, VD 96=Cà Mau, 97=Bạc Liêu)
+shipping.remote.surcharge=15000
+shipping.remote.provinces=96,97
+
+# API địa chỉ: open-api | vnappmob (có thể đổi trên form checkout)
+address.api.provider=open-api
+
+# Lưu ý VNPay IPN: URL phải public (không dùng localhost) để sandbox gọi được.
+# Ví dụ dùng ngrok: vnpay.ipn.url=https://xxxx.ngrok.io/App_Website_Do_Luu_Niem/payment/vnpay/ipn

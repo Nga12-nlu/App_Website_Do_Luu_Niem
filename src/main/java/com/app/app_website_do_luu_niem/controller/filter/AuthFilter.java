@@ -15,7 +15,10 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
-@WebFilter(urlPatterns = {"/cart", "/checkout", "/admin/*"})
+@WebFilter(urlPatterns = {
+        "/cart", "/checkout", "/my-orders", "/order-success", "/profile", "/change-password",
+        "/payment/vnpay/*", "/api/checkout/*", "/api/coupon/*", "/admin/*"
+})
 public class AuthFilter implements Filter {
 
     @Override

@@ -18,6 +18,9 @@ public class AdminOrderServlet extends HttpServlet {
 
     private final OrderDao orderDao = new OrderDaoImpl();
 
+    private static final java.util.Set<String> ALLOWED_STATUSES = java.util.Set.of(
+            "PENDING", "CONFIRMED", "SHIPPED", "CANCELLED");
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -26,9 +29,17 @@ public class AdminOrderServlet extends HttpServlet {
         }
         switch (action) {
             case "detail" -> showDetail(req, resp);
-            case "update-status" -> updateStatus(req, resp);
             default -> showList(req, resp);
         }
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        if ("update-status".equals(req.getParameter("action"))) {
+            updateStatus(req, resp);
+            return;
+        }
+        resp.sendRedirect(req.getContextPath() + "/admin/orders");
     }
 
     private void showList(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -95,10 +106,11 @@ public class AdminOrderServlet extends HttpServlet {
     private void updateStatus(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String idParam = req.getParameter("id");
         String status = req.getParameter("status");
-        if (idParam != null && status != null && !status.isBlank()) {
+        if (idParam != null && status != null && !status.isBlank()
+                && ALLOWED_STATUSES.contains(status.toUpperCase())) {
             try {
                 int id = Integer.parseInt(idParam);
-                orderDao.updateStatus(id, status);
+                orderDao.updateStatus(id, status.toUpperCase());
                 // Redirect về order detail để xem kết quả
                 resp.sendRedirect(req.getContextPath() + "/admin/orders?action=detail&id=" + id);
                 return;

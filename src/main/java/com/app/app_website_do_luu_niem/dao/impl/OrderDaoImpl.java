@@ -30,6 +30,11 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
 
     @Override
     public void saveWithItems(Order order) {
+        saveWithItems(order, true);
+    }
+
+    @Override
+    public void saveWithItems(Order order, boolean deductStock) {
         String itemSql = "INSERT INTO order_items (order_id, product_id, quantity, unit_price, variant_id, variant_label) "
                 + "VALUES (?, ?, ?, ?, ?, ?)";
 
@@ -63,12 +68,8 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
                     itemPs.executeBatch();
                 }
 
-                for (OrderItem item : order.getItems()) {
-                    if (item.getVariantId() != null) {
-                        decrementVariantStock(conn, item.getVariantId(), item.getQuantity());
-                    } else {
-                        decrementProductStock(conn, item.getProduct().getId(), item.getQuantity());
-                    }
+                if (deductStock) {
+                    deductStockForItems(conn, order.getItems());
                 }
 
                 conn.commit();
@@ -84,9 +85,22 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
     }
 
     private void insertOrderHeader(Connection conn, Order order) throws SQLException {
+        boolean hasCheckoutCols = hasColumn(conn, "orders", "subtotal");
         boolean hasPaymentCols = hasColumn(conn, "orders", "payment_method");
         String orderSql;
-        if (hasPaymentCols) {
+        if (hasCheckoutCols) {
+            orderSql = "INSERT INTO orders (user_id, subtotal, discount_amount, shipping_fee, total_amount, status";
+            if (hasPaymentCols) {
+                orderSql += ", payment_method, vnpay_txn_ref";
+            }
+            orderSql += ", coupon_id, coupon_code, receiver_name, customer_note, "
+                    + "province_code, province_name, district_code, district_name, ward_code, ward_name, "
+                    + "address_detail, shipping_address, phone, created_at) VALUES (?,?,?,?,?,?";
+            if (hasPaymentCols) {
+                orderSql += ",?,?";
+            }
+            orderSql += ",?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        } else if (hasPaymentCols) {
             orderSql = "INSERT INTO orders (user_id, total_amount, status, payment_method, vnpay_txn_ref, "
                     + "shipping_address, phone, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         } else {
@@ -97,6 +111,11 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
         try (PreparedStatement orderPs = conn.prepareStatement(orderSql, Statement.RETURN_GENERATED_KEYS)) {
             int i = 1;
             orderPs.setInt(i++, order.getUser().getId());
+            if (hasCheckoutCols) {
+                orderPs.setBigDecimal(i++, order.getSubtotal() != null ? order.getSubtotal() : order.getTotalAmount());
+                orderPs.setBigDecimal(i++, order.getDiscountAmount() != null ? order.getDiscountAmount() : BigDecimal.ZERO);
+                orderPs.setBigDecimal(i++, order.getShippingFee() != null ? order.getShippingFee() : BigDecimal.ZERO);
+            }
             orderPs.setBigDecimal(i++, order.getTotalAmount());
             orderPs.setString(i++, order.getStatus());
             if (hasPaymentCols) {
@@ -107,6 +126,19 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
                 } else {
                     orderPs.setNull(i++, java.sql.Types.VARCHAR);
                 }
+            }
+            if (hasCheckoutCols) {
+                setIntegerOrNull(orderPs, i++, order.getCouponId());
+                orderPs.setString(i++, order.getCouponCode());
+                orderPs.setString(i++, order.getReceiverName());
+                orderPs.setString(i++, order.getCustomerNote());
+                orderPs.setString(i++, order.getProvinceCode());
+                orderPs.setString(i++, order.getProvinceName());
+                orderPs.setString(i++, order.getDistrictCode());
+                orderPs.setString(i++, order.getDistrictName());
+                orderPs.setString(i++, order.getWardCode());
+                orderPs.setString(i++, order.getWardName());
+                orderPs.setString(i++, order.getAddressDetail());
             }
             orderPs.setString(i++, order.getShippingAddress());
             orderPs.setString(i++, order.getPhone());
@@ -120,6 +152,14 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
                     order.setId(rs.getInt(1));
                 }
             }
+        }
+    }
+
+    private static void setIntegerOrNull(PreparedStatement ps, int index, Integer value) throws SQLException {
+        if (value != null) {
+            ps.setInt(index, value);
+        } else {
+            ps.setNull(index, java.sql.Types.INTEGER);
         }
     }
 
@@ -421,16 +461,64 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
 
     @Override
     public boolean markVnpayPaid(int orderId, String vnpayTransactionNo, BigDecimal paidAmount) {
-        String sql = "UPDATE orders SET status = 'CONFIRMED', paid_at = NOW(), vnpay_transaction_no = ? "
+        String updateSql = "UPDATE orders SET status = 'CONFIRMED', paid_at = NOW(), vnpay_transaction_no = ? "
                 + "WHERE id = ? AND status = 'PENDING' AND payment_method = 'VNPAY' AND total_amount = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, vnpayTransactionNo);
-            ps.setInt(2, orderId);
-            ps.setBigDecimal(3, paidAmount);
-            return ps.executeUpdate() == 1;
+        String itemSql = "SELECT product_id, quantity, variant_id FROM order_items WHERE order_id = ?";
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                int updated;
+                try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                    ps.setString(1, vnpayTransactionNo);
+                    ps.setInt(2, orderId);
+                    ps.setBigDecimal(3, paidAmount);
+                    updated = ps.executeUpdate();
+                }
+                if (updated != 1) {
+                    conn.rollback();
+                    return false;
+                }
+                List<OrderItem> items = new ArrayList<>();
+                try (PreparedStatement ps = conn.prepareStatement(itemSql)) {
+                    ps.setInt(1, orderId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            OrderItem item = new OrderItem();
+                            Product p = new Product();
+                            p.setId(rs.getInt("product_id"));
+                            item.setProduct(p);
+                            item.setQuantity(rs.getInt("quantity"));
+                            int vid = rs.getInt("variant_id");
+                            if (!rs.wasNull()) {
+                                item.setVariantId(vid);
+                            }
+                            items.add(item);
+                        }
+                    }
+                }
+                deductStockForItems(conn, items);
+                conn.commit();
+                return true;
+            } catch (Exception e) {
+                conn.rollback();
+                throw new RuntimeException("Lỗi xác nhận thanh toán VNPay: " + e.getMessage(), e);
+            } finally {
+                conn.setAutoCommit(true);
+            }
         } catch (SQLException e) {
             throw new RuntimeException("Lỗi xác nhận thanh toán VNPay", e);
+        }
+    }
+
+    private void deductStockForItems(Connection conn, List<OrderItem> items) throws SQLException {
+        for (OrderItem item : items) {
+            if (item.getVariantId() != null) {
+                lockAndValidateVariantStock(conn, item.getVariantId(), item.getQuantity());
+                decrementVariantStock(conn, item.getVariantId(), item.getQuantity());
+            } else {
+                lockAndValidateProductStock(conn, item.getProduct().getId(), item.getQuantity());
+                decrementProductStock(conn, item.getProduct().getId(), item.getQuantity());
+            }
         }
     }
 
@@ -593,6 +681,51 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
             if (paidAt != null) {
                 order.setPaidAt(paidAt.toLocalDateTime());
             }
+        }
+        if (hasColumn(rs, "subtotal")) {
+            order.setSubtotal(rs.getBigDecimal("subtotal"));
+        }
+        if (hasColumn(rs, "discount_amount")) {
+            order.setDiscountAmount(rs.getBigDecimal("discount_amount"));
+        }
+        if (hasColumn(rs, "shipping_fee")) {
+            order.setShippingFee(rs.getBigDecimal("shipping_fee"));
+        }
+        if (hasColumn(rs, "coupon_id")) {
+            int cid = rs.getInt("coupon_id");
+            if (!rs.wasNull()) {
+                order.setCouponId(cid);
+            }
+        }
+        if (hasColumn(rs, "coupon_code")) {
+            order.setCouponCode(rs.getString("coupon_code"));
+        }
+        if (hasColumn(rs, "receiver_name")) {
+            order.setReceiverName(rs.getString("receiver_name"));
+        }
+        if (hasColumn(rs, "customer_note")) {
+            order.setCustomerNote(rs.getString("customer_note"));
+        }
+        if (hasColumn(rs, "province_code")) {
+            order.setProvinceCode(rs.getString("province_code"));
+        }
+        if (hasColumn(rs, "province_name")) {
+            order.setProvinceName(rs.getString("province_name"));
+        }
+        if (hasColumn(rs, "district_code")) {
+            order.setDistrictCode(rs.getString("district_code"));
+        }
+        if (hasColumn(rs, "district_name")) {
+            order.setDistrictName(rs.getString("district_name"));
+        }
+        if (hasColumn(rs, "ward_code")) {
+            order.setWardCode(rs.getString("ward_code"));
+        }
+        if (hasColumn(rs, "ward_name")) {
+            order.setWardName(rs.getString("ward_name"));
+        }
+        if (hasColumn(rs, "address_detail")) {
+            order.setAddressDetail(rs.getString("address_detail"));
         }
         order.setShippingAddress(rs.getString("shipping_address"));
         order.setPhone(rs.getString("phone"));
