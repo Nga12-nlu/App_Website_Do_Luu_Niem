@@ -33,15 +33,47 @@ public class LoginServlet extends HttpServlet {
         String password = req.getParameter("password");
         String redirect = req.getParameter("redirect");
 
-        Optional<User> userOpt = authService.login(email, password);
-        if (userOpt.isPresent()) {
-            AuthRedirectHelper.completeLogin(req, resp, userOpt.get(), redirect);
-        } else {
-            req.setAttribute("error", "Email hoặc mật khẩu không đúng, hoặc tài khoản đã bị khóa.");
-            req.setAttribute("email", email);
-            req.setAttribute("googleEnabled", AppConfig.isGoogleOAuthEnabled());
-            req.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(req, resp);
+        try {
+            if (email == null || email.isBlank() || password == null || password.isBlank()) {
+                forwardLoginError(req, resp, email, "Vui lòng nhập email và mật khẩu.");
+                return;
+            }
+
+            Optional<User> existing = authService.findByEmailNormalized(email);
+            if (existing.isPresent()) {
+                User found = existing.get();
+                if (!found.isActive()) {
+                    forwardLoginError(req, resp, email, "Tài khoản đã bị khóa. Vui lòng liên hệ hỗ trợ.");
+                    return;
+                }
+                if (!found.hasLocalPassword()) {
+                    forwardLoginError(req, resp, email,
+                            "Email này đăng ký bằng Google. Vui lòng chọn \"Đăng nhập với Google\".");
+                    return;
+                }
+            }
+
+            Optional<User> userOpt = authService.login(email, password);
+            if (userOpt.isPresent()) {
+                AuthRedirectHelper.completeLogin(req, resp, userOpt.get(), redirect);
+                return;
+            }
+
+            forwardLoginError(req, resp, email,
+                    "Email hoặc mật khẩu không đúng. Nếu chưa có tài khoản, hãy đăng ký.");
+        } catch (RuntimeException ex) {
+            req.getServletContext().log("Login failed: " + ex.getMessage(), ex);
+            forwardLoginError(req, resp, email,
+                    "Không thể đăng nhập lúc này. Vui lòng thử lại sau.");
         }
+    }
+
+    private void forwardLoginError(HttpServletRequest req, HttpServletResponse resp, String email, String message)
+            throws ServletException, IOException {
+        req.setAttribute("error", message);
+        req.setAttribute("email", email);
+        req.setAttribute("googleEnabled", AppConfig.isGoogleOAuthEnabled());
+        req.getRequestDispatcher("/WEB-INF/views/auth/login.jsp").forward(req, resp);
     }
 
     private static String mapGoogleError(String code) {

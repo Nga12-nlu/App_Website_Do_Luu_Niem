@@ -33,11 +33,33 @@ public class AuthService {
         return raw != null && PASSWORD_STRONG.matcher(raw).matches();
     }
 
+    public Optional<User> findByEmailNormalized(String email) {
+        String em = normalizeEmail(email);
+        if (em.isBlank()) {
+            return Optional.empty();
+        }
+        return userDao.findByEmail(em);
+    }
+
     public Optional<User> login(String email, String password) {
-        return userDao.findByEmail(normalizeEmail(email))
+        if (email == null || email.isBlank() || password == null || password.isBlank()) {
+            return Optional.empty();
+        }
+        return findByEmailNormalized(email)
                 .filter(User::isActive)
                 .filter(User::hasLocalPassword)
-                .filter(u -> BCrypt.checkpw(password, u.getPasswordHash()));
+                .filter(u -> verifyPassword(password, u.getPasswordHash()));
+    }
+
+    private static boolean verifyPassword(String rawPassword, String passwordHash) {
+        if (passwordHash == null || passwordHash.isBlank()) {
+            return false;
+        }
+        try {
+            return BCrypt.checkpw(rawPassword, passwordHash);
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
     }
 
     /**

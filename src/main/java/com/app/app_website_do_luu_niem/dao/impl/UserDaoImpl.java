@@ -412,7 +412,9 @@ public class UserDaoImpl extends BaseDao implements UserDao {
         user.setId(rs.getInt("id"));
         user.setEmail(rs.getString("email"));
         user.setPasswordHash(rs.getString("password_hash"));
-        user.setGoogleId(rs.getString("google_id"));
+        if (hasColumn(rs, "google_id")) {
+            user.setGoogleId(rs.getString("google_id"));
+        }
         user.setFullName(rs.getString("full_name"));
         user.setRole(rs.getString("role"));
         user.setActive(rs.getBoolean("active"));
@@ -421,6 +423,16 @@ public class UserDaoImpl extends BaseDao implements UserDao {
             user.setCreatedAt(createdAt.toLocalDateTime());
         }
         return user;
+    }
+
+    private static boolean hasColumn(ResultSet rs, String column) throws SQLException {
+        java.sql.ResultSetMetaData meta = rs.getMetaData();
+        for (int i = 1; i <= meta.getColumnCount(); i++) {
+            if (column.equalsIgnoreCase(meta.getColumnLabel(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private UserAdminRow mapAdminRow(ResultSet rs) throws SQLException {
