@@ -7,6 +7,7 @@ import com.app.app_website_do_luu_niem.dao.impl.PasswordResetTokenDaoImpl;
 import com.app.app_website_do_luu_niem.dao.impl.UserDaoImpl;
 import com.app.app_website_do_luu_niem.model.PasswordResetToken;
 import com.app.app_website_do_luu_niem.model.User;
+import com.app.app_website_do_luu_niem.service.GoogleOAuthService.GoogleUserInfo;
 import com.app.app_website_do_luu_niem.util.TokenHasher;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,7 +36,63 @@ public class AuthService {
     public Optional<User> login(String email, String password) {
         return userDao.findByEmail(normalizeEmail(email))
                 .filter(User::isActive)
+                .filter(User::hasLocalPassword)
                 .filter(u -> BCrypt.checkpw(password, u.getPasswordHash()));
+    }
+
+    /**
+     * Đăng nhập hoặc tạo tài khoản từ thông tin Google.
+     *
+     * @return empty nếu thất bại; nếu không rỗng là mã lỗi: inactive, email_linked_other, invalid
+     */
+    public Optional<String> loginOrRegisterWithGoogle(GoogleUserInfo profile) {
+        if (profile == null || profile.sub == null || profile.sub.isBlank()) {
+            return Optional.of("invalid");
+        }
+        String googleId = profile.sub.trim();
+        String email = profile.normalizedEmail();
+        if (email.isBlank()) {
+            return Optional.of("invalid");
+        }
+
+        Optional<User> byGoogle = userDao.findByGoogleId(googleId);
+        if (byGoogle.isPresent()) {
+            User u = byGoogle.get();
+            return u.isActive() ? Optional.empty() : Optional.of("inactive");
+        }
+
+        Optional<User> byEmail = userDao.findByEmail(email);
+        if (byEmail.isPresent()) {
+            User existing = byEmail.get();
+            if (!existing.isActive()) {
+                return Optional.of("inactive");
+            }
+            if (existing.getGoogleId() != null && !existing.getGoogleId().isBlank()
+                    && !existing.getGoogleId().equals(googleId)) {
+                return Optional.of("email_linked_other");
+            }
+            if (existing.getGoogleId() == null || existing.getGoogleId().isBlank()) {
+                userDao.linkGoogleAccount(existing.getId(), googleId);
+                existing.setGoogleId(googleId);
+            }
+            return Optional.empty();
+        }
+
+        String displayName = profile.name != null && !profile.name.isBlank() ? profile.name.trim() : email;
+        User user = new User();
+        user.setEmail(email);
+        user.setGoogleId(googleId);
+        user.setFullName(displayName);
+        user.setPasswordHash(null);
+        user.setRole("CUSTOMER");
+        user.setActive(true);
+        user.setCreatedAt(LocalDateTime.now());
+        userDao.save(user);
+        return Optional.empty();
+    }
+
+    public Optional<User> findActiveUserByGoogleId(String googleId) {
+        return userDao.findByGoogleId(googleId).filter(User::isActive);
     }
 
     public boolean register(String fullName, String email, String rawPassword) {

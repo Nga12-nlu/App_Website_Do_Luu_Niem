@@ -37,3 +37,6 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Local secrets (chỉ dùng db.properties.example làm mẫu) ###
+src/main/resources/db.properties

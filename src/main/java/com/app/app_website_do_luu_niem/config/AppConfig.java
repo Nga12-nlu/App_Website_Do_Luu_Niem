@@ -74,6 +74,23 @@ public final class AppConfig {
         return n != null ? n.trim() : "Souvenir Shop";
     }
 
+    public static boolean isGoogleOAuthEnabled() {
+        return !getGoogleClientId().isEmpty() && !getGoogleClientSecret().isEmpty();
+    }
+
+    public static String getGoogleClientId() {
+        return nullToEmpty(PROPS.getProperty("google.oauth.client.id"));
+    }
+
+    public static String getGoogleClientSecret() {
+        return nullToEmpty(PROPS.getProperty("google.oauth.client.secret"));
+    }
+
+    /** Để trống = {app.public.base.url hoặc request}/auth/google/callback */
+    public static String getGoogleRedirectUriOverride() {
+        return nullToEmpty(PROPS.getProperty("google.oauth.redirect.uri"));
+    }
+
     private static String nullToEmpty(String s) {
         return s != null ? s.trim() : "";
     }

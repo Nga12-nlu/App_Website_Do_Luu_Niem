@@ -17,3 +17,12 @@ mail.smtp.password=
 mail.smtp.starttls.enable=true
 mail.from.address=
 mail.from.name=Souvenir Shop
+
+# --- Đăng nhập Google (OAuth 2.0) ---
+# Tạo client tại https://console.cloud.google.com/apis/credentials
+# Loại: Web application. Authorized redirect URI phải khớp chính xác, ví dụ:
+#   http://localhost:8080/App_Website_Do_Luu_Niem/auth/google/callback  
+google.oauth.client.id=
+google.oauth.client.secret=
+# Để trống = tự suy ra từ app.public.base.url hoặc request
+google.oauth.redirect.uri=

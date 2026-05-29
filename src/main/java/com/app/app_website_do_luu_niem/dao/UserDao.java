@@ -10,6 +10,8 @@ public interface UserDao {
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByGoogleId(String googleId);
+
     Optional<User> findById(int id);
 
     List<User> findAll();
@@ -38,6 +40,8 @@ public interface UserDao {
     void updateProfile(int id, String fullName, String email);
 
     void updatePasswordHash(int userId, String passwordHash);
+
+    void linkGoogleAccount(int userId, String googleId);
 
     void updateRoleAndActive(int id, String role, boolean active);
 

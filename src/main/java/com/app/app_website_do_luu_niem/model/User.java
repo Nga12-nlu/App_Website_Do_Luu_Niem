@@ -6,6 +6,7 @@ public class User {
     private int id;
     private String email;
     private String passwordHash;
+    private String googleId;
     private String fullName;
     private String role; // ADMIN, CUSTOMER
     private boolean active;
@@ -33,6 +34,18 @@ public class User {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public String getGoogleId() {
+        return googleId;
+    }
+
+    public void setGoogleId(String googleId) {
+        this.googleId = googleId;
+    }
+
+    public boolean hasLocalPassword() {
+        return passwordHash != null && !passwordHash.isBlank();
     }
 
     public String getFullName() {

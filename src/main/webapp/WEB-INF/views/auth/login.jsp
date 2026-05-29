@@ -18,6 +18,20 @@
             <c:if test="${not empty message}">
                 <div class="alert alert-success"><c:out value="${message}"/></div>
             </c:if>
+            <c:if test="${not empty googleError}">
+                <div class="alert alert-danger"><c:out value="${googleError}"/></div>
+            </c:if>
+            <c:if test="${googleEnabled}">
+                <c:url var="googleLoginUrl" value="/auth/google">
+                    <c:if test="${not empty param.redirect}">
+                        <c:param name="redirect" value="${param.redirect}"/>
+                    </c:if>
+                </c:url>
+                <a href="${googleLoginUrl}" class="btn btn-google mb-3">
+                    <i class="fab fa-google"></i> Đăng nhập với Google
+                </a>
+                <div class="auth-divider">hoặc đăng nhập bằng email</div>
+            </c:if>
             <form method="post" action="${pageContext.request.contextPath}/login">
                 <c:if test="${not empty param.redirect}">
                     <input type="hidden" name="redirect" value="${param.redirect}"/>

@@ -44,6 +44,26 @@ public class UserDaoImpl extends BaseDao implements UserDao {
     }
 
     @Override
+    public Optional<User> findByGoogleId(String googleId) {
+        if (googleId == null || googleId.isBlank()) {
+            return Optional.empty();
+        }
+        String sql = "SELECT * FROM users WHERE google_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, googleId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi truy vấn người dùng theo Google ID", e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
     public Optional<User> findById(int id) {
         String sql = "SELECT * FROM users WHERE id = ?";
         try (Connection conn = getConnection();
@@ -203,16 +223,25 @@ public class UserDaoImpl extends BaseDao implements UserDao {
 
     @Override
     public void save(User user) {
-        String sql = "INSERT INTO users (email, password_hash, full_name, role, active, created_at) "
-                + "VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO users (email, password_hash, google_id, full_name, role, active, created_at) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, user.getEmail());
-            ps.setString(2, user.getPasswordHash());
-            ps.setString(3, user.getFullName());
-            ps.setString(4, user.getRole());
-            ps.setBoolean(5, user.isActive());
-            ps.setTimestamp(6, Timestamp.valueOf(
+            if (user.getPasswordHash() != null) {
+                ps.setString(2, user.getPasswordHash());
+            } else {
+                ps.setNull(2, java.sql.Types.VARCHAR);
+            }
+            if (user.getGoogleId() != null && !user.getGoogleId().isBlank()) {
+                ps.setString(3, user.getGoogleId());
+            } else {
+                ps.setNull(3, java.sql.Types.VARCHAR);
+            }
+            ps.setString(4, user.getFullName());
+            ps.setString(5, user.getRole());
+            ps.setBoolean(6, user.isActive());
+            ps.setTimestamp(7, Timestamp.valueOf(
                     user.getCreatedAt() != null ? user.getCreatedAt() : LocalDateTime.now()
             ));
             ps.executeUpdate();
@@ -228,18 +257,40 @@ public class UserDaoImpl extends BaseDao implements UserDao {
 
     @Override
     public void update(User user) {
-        String sql = "UPDATE users SET email = ?, password_hash = ?, full_name = ?, role = ?, active = ? WHERE id = ?";
+        String sql = "UPDATE users SET email = ?, password_hash = ?, google_id = ?, full_name = ?, role = ?, active = ? WHERE id = ?";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, user.getEmail());
-            ps.setString(2, user.getPasswordHash());
-            ps.setString(3, user.getFullName());
-            ps.setString(4, user.getRole());
-            ps.setBoolean(5, user.isActive());
-            ps.setInt(6, user.getId());
+            if (user.getPasswordHash() != null) {
+                ps.setString(2, user.getPasswordHash());
+            } else {
+                ps.setNull(2, java.sql.Types.VARCHAR);
+            }
+            if (user.getGoogleId() != null && !user.getGoogleId().isBlank()) {
+                ps.setString(3, user.getGoogleId());
+            } else {
+                ps.setNull(3, java.sql.Types.VARCHAR);
+            }
+            ps.setString(4, user.getFullName());
+            ps.setString(5, user.getRole());
+            ps.setBoolean(6, user.isActive());
+            ps.setInt(7, user.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Lỗi cập nhật người dùng", e);
+        }
+    }
+
+    @Override
+    public void linkGoogleAccount(int userId, String googleId) {
+        String sql = "UPDATE users SET google_id = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, googleId);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi liên kết tài khoản Google", e);
         }
     }
 
@@ -361,6 +412,7 @@ public class UserDaoImpl extends BaseDao implements UserDao {
         user.setId(rs.getInt("id"));
         user.setEmail(rs.getString("email"));
         user.setPasswordHash(rs.getString("password_hash"));
+        user.setGoogleId(rs.getString("google_id"));
         user.setFullName(rs.getString("full_name"));
         user.setRole(rs.getString("role"));
         user.setActive(rs.getBoolean("active"));

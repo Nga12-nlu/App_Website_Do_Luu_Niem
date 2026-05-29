@@ -69,6 +69,7 @@ public class DatabaseInitializer implements ServletContextListener {
             }
             migrateProductVariantsIfNeeded(sce);
             migratePasswordResetIfNeeded(sce);
+            migrateGoogleOAuthIfNeeded(sce);
             migrateStaticContentsIfNeeded(sce);
         } catch (Exception e) {
             sce.getServletContext().log("Không thể khởi tạo database: " + e.getMessage(), e);
@@ -126,6 +127,29 @@ public class DatabaseInitializer implements ServletContextListener {
             if (!tableExists("password_reset_tokens")) {
                 st.execute(CREATE_PASSWORD_RESET);
                 sce.getServletContext().log("Đã tạo bảng password_reset_tokens.");
+            }
+        }
+    }
+
+    private void migrateGoogleOAuthIfNeeded(ServletContextEvent sce) throws Exception {
+        if (!tableExists("users")) {
+            return;
+        }
+        try (Connection conn = DBConnection.getConnection();
+             Statement st = conn.createStatement()) {
+            if (!columnExists(conn, "users", "google_id")) {
+                st.execute("ALTER TABLE users ADD COLUMN google_id VARCHAR(255) NULL");
+                sce.getServletContext().log("Đã thêm cột users.google_id.");
+            }
+            try {
+                st.execute("CREATE UNIQUE INDEX idx_users_google_id ON users (google_id)");
+            } catch (Exception ignored) {
+                // Index đã tồn tại
+            }
+            try {
+                st.execute("ALTER TABLE users MODIFY COLUMN password_hash VARCHAR(255) NULL");
+            } catch (Exception ignored) {
+                // Cột đã nullable hoặc engine không hỗ trợ
             }
         }
     }

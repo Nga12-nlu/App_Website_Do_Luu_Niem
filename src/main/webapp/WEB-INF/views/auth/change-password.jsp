@@ -53,12 +53,22 @@
                         </div>
                     </c:if>
 
-                    <form method="post" action="${pageContext.request.contextPath}/change-password" id="changePasswordForm">
-                        <div class="mb-3">
-                            <label class="form-label">Mật khẩu hiện tại *</label>
-                            <input type="password" name="currentPassword" class="form-control" 
-                                   placeholder="Nhập mật khẩu hiện tại" required>
+                    <c:if test="${oauthOnly}">
+                        <div class="alert alert-info">
+                            Tài khoản đăng nhập bằng Google chưa có mật khẩu. Đặt mật khẩu để có thể đăng nhập bằng email.
                         </div>
+                    </c:if>
+                    <form method="post" action="${pageContext.request.contextPath}/change-password" id="changePasswordForm">
+                        <c:if test="${not oauthOnly}">
+                            <div class="mb-3">
+                                <label class="form-label">Mật khẩu hiện tại *</label>
+                                <input type="password" name="currentPassword" class="form-control"
+                                       placeholder="Nhập mật khẩu hiện tại" required>
+                            </div>
+                        </c:if>
+                        <c:if test="${oauthOnly}">
+                            <input type="hidden" name="currentPassword" value="">
+                        </c:if>
                         <div class="mb-3">
                             <label class="form-label">Mật khẩu mới *</label>
                             <input type="password" name="newPassword" class="form-control"

@@ -36,7 +36,7 @@ public class ChangePasswordServlet extends HttpServlet {
             return;
         }
 
-        req.getRequestDispatcher("/WEB-INF/views/auth/change-password.jsp").forward(req, resp);
+        forwardChangePassword(req, resp, currentUser);
     }
 
     @Override
@@ -57,46 +57,59 @@ public class ChangePasswordServlet extends HttpServlet {
         String newPassword = req.getParameter("newPassword");
         String confirmPassword = req.getParameter("confirmPassword");
 
-        if (currentPassword == null || currentPassword.isBlank() ||
-            newPassword == null || newPassword.isBlank() ||
-            confirmPassword == null || confirmPassword.isBlank()) {
-            req.setAttribute("error", "Vui lòng nhập đầy đủ thông tin.");
-            req.getRequestDispatcher("/WEB-INF/views/auth/change-password.jsp").forward(req, resp);
-            return;
-        }
-
-        // Kiểm tra mật khẩu hiện tại
         Optional<User> opt = userDao.findById(currentUser.getId());
         if (opt.isEmpty()) {
             req.setAttribute("error", "Không tìm thấy tài khoản.");
-            req.getRequestDispatcher("/WEB-INF/views/auth/change-password.jsp").forward(req, resp);
+            forwardChangePassword(req, resp, currentUser);
             return;
         }
 
         User user = opt.get();
-        if (!BCrypt.checkpw(currentPassword, user.getPasswordHash())) {
-            req.setAttribute("error", "Mật khẩu hiện tại không đúng.");
-            req.getRequestDispatcher("/WEB-INF/views/auth/change-password.jsp").forward(req, resp);
+        boolean oauthOnly = !user.hasLocalPassword();
+
+        if (newPassword == null || newPassword.isBlank() || confirmPassword == null || confirmPassword.isBlank()) {
+            req.setAttribute("error", "Vui lòng nhập đầy đủ thông tin.");
+            forwardChangePassword(req, resp, currentUser);
             return;
+        }
+        if (!oauthOnly && (currentPassword == null || currentPassword.isBlank())) {
+            req.setAttribute("error", "Vui lòng nhập mật khẩu hiện tại.");
+            forwardChangePassword(req, resp, currentUser);
+            return;
+        }
+        if (!oauthOnly) {
+            if (!BCrypt.checkpw(currentPassword, user.getPasswordHash())) {
+                req.setAttribute("error", "Mật khẩu hiện tại không đúng.");
+                forwardChangePassword(req, resp, currentUser);
+                return;
+            }
         }
 
         // Kiểm tra mật khẩu mới và xác nhận
         if (!newPassword.equals(confirmPassword)) {
             req.setAttribute("error", "Mật khẩu mới và xác nhận không khớp.");
-            req.getRequestDispatcher("/WEB-INF/views/auth/change-password.jsp").forward(req, resp);
+            forwardChangePassword(req, resp, currentUser);
             return;
         }
 
         AuthService authService = new AuthService();
         if (!authService.isPasswordStrongEnough(newPassword)) {
             req.setAttribute("error", "Mật khẩu mới phải từ 8–128 ký tự, gồm ít nhất một chữ cái và một chữ số.");
-            req.getRequestDispatcher("/WEB-INF/views/auth/change-password.jsp").forward(req, resp);
+            forwardChangePassword(req, resp, currentUser);
             return;
         }
 
         userDao.updatePasswordHash(user.getId(), BCrypt.hashpw(newPassword, BCrypt.gensalt()));
 
-        req.setAttribute("success", "Đổi mật khẩu thành công!");
+        req.setAttribute("success", oauthOnly ? "Đã đặt mật khẩu — bạn có thể đăng nhập bằng email và mật khẩu."
+                : "Đổi mật khẩu thành công!");
+        forwardChangePassword(req, resp, currentUser);
+    }
+
+    private void forwardChangePassword(HttpServletRequest req, HttpServletResponse resp, User sessionUser)
+            throws ServletException, IOException {
+        userDao.findById(sessionUser.getId()).ifPresent(u ->
+                req.setAttribute("oauthOnly", !u.hasLocalPassword()));
         req.getRequestDispatcher("/WEB-INF/views/auth/change-password.jsp").forward(req, resp);
     }
 }

@@ -15,6 +15,12 @@
             <c:if test="${not empty error}">
                 <div class="alert alert-danger"><c:out value="${error}"/></div>
             </c:if>
+            <c:if test="${googleEnabled}">
+                <a href="${pageContext.request.contextPath}/auth/google" class="btn btn-google mb-3">
+                    <i class="fab fa-google"></i> Đăng ký nhanh với Google
+                </a>
+                <div class="auth-divider">hoặc đăng ký bằng email</div>
+            </c:if>
             <form method="post" action="${pageContext.request.contextPath}/register">
                 <div class="mb-3">
                     <label class="form-label">Họ tên</label>
