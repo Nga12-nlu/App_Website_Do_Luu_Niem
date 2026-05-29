@@ -9,6 +9,10 @@ public class Order {
     private User user;
     private BigDecimal totalAmount;
     private String status;
+    private String paymentMethod;
+    private String vnpayTxnRef;
+    private String vnpayTransactionNo;
+    private LocalDateTime paidAt;
     private String shippingAddress;
     private String phone;
     private LocalDateTime createdAt;
@@ -44,6 +48,50 @@ public class Order {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public boolean isVnpay() {
+        return "VNPAY".equalsIgnoreCase(paymentMethod);
+    }
+
+    public boolean isCod() {
+        return paymentMethod == null || paymentMethod.isBlank() || "COD".equalsIgnoreCase(paymentMethod);
+    }
+
+    public String getVnpayTxnRef() {
+        return vnpayTxnRef;
+    }
+
+    public void setVnpayTxnRef(String vnpayTxnRef) {
+        this.vnpayTxnRef = vnpayTxnRef;
+    }
+
+    public String getVnpayTransactionNo() {
+        return vnpayTransactionNo;
+    }
+
+    public void setVnpayTransactionNo(String vnpayTransactionNo) {
+        this.vnpayTransactionNo = vnpayTransactionNo;
+    }
+
+    public LocalDateTime getPaidAt() {
+        return paidAt;
+    }
+
+    public void setPaidAt(LocalDateTime paidAt) {
+        this.paidAt = paidAt;
+    }
+
+    public boolean isPaid() {
+        return paidAt != null || "CONFIRMED".equalsIgnoreCase(status) || "SHIPPED".equalsIgnoreCase(status);
     }
 
     public String getShippingAddress() {

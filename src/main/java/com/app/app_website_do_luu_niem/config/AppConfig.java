@@ -91,6 +91,48 @@ public final class AppConfig {
         return nullToEmpty(PROPS.getProperty("google.oauth.redirect.uri"));
     }
 
+    /** Đã bật VNPay trong cấu hình (có thể sandbox). */
+    public static boolean isVnpayFeatureOn() {
+        return Boolean.parseBoolean(PROPS.getProperty("vnpay.enabled", "false"));
+    }
+
+    /** Đủ TMN + secret — mới chọn thanh toán / redirect sang VNPay. */
+    public static boolean isVnpayEnabled() {
+        return isVnpayFeatureOn()
+                && !getVnpayTmnCode().isEmpty()
+                && !getVnpayHashSecret().isEmpty();
+    }
+
+    public static boolean isVnpaySandbox() {
+        return getVnpayPayUrl().contains("sandbox.vnpayment.vn");
+    }
+
+    public static String getVnpayTmnCode() {
+        return nullToEmpty(PROPS.getProperty("vnpay.tmn.code"));
+    }
+
+    public static String getVnpayHashSecret() {
+        return nullToEmpty(PROPS.getProperty("vnpay.hash.secret"));
+    }
+
+    public static String getVnpayPayUrl() {
+        String u = PROPS.getProperty("vnpay.pay.url",
+                "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html");
+        return u != null ? u.trim() : "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+    }
+
+    public static String getVnpayVersion() {
+        return nullToEmpty(PROPS.getProperty("vnpay.version", "2.1.0"));
+    }
+
+    public static String getVnpayReturnUrlOverride() {
+        return nullToEmpty(PROPS.getProperty("vnpay.return.url"));
+    }
+
+    public static String getVnpayIpnUrlOverride() {
+        return nullToEmpty(PROPS.getProperty("vnpay.ipn.url"));
+    }
+
     private static String nullToEmpty(String s) {
         return s != null ? s.trim() : "";
     }

@@ -233,4 +233,16 @@ public class AuthService {
         }
         return truncateIp(req.getRemoteAddr());
     }
+
+    /** VNPay sandbox thường không chấp nhận IPv6 loopback. */
+    public static String clientIpForVnpay(HttpServletRequest req) {
+        String ip = clientIp(req);
+        if (ip == null || ip.isBlank()) {
+            return "127.0.0.1";
+        }
+        if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
+            return "127.0.0.1";
+        }
+        return ip;
+    }
 }

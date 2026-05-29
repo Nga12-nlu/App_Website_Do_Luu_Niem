@@ -12,6 +12,11 @@
         </div>
         <h1 class="success-title">Đặt hàng thành công!</h1>
         <p class="success-message">Cảm ơn bạn đã mua sắm tại Souvenir Shop. Đơn hàng của bạn đã được tiếp nhận và đang được xử lý.</p>
+        <c:if test="${not empty paymentNotice}">
+            <div class="alert alert-info text-start mx-auto" style="max-width: 520px;">
+                <i class="fas fa-info-circle me-2"></i><c:out value="${paymentNotice}"/>
+            </div>
+        </c:if>
         
         <c:if test="${not empty order}">
             <div class="order-info-card">
@@ -33,6 +38,18 @@
                         </div>
                         <div class="order-info-value">
                             <span class="price-value" data-price="${order.totalAmount}">${order.totalAmount}</span> &#8363;
+                        </div>
+                    </div>
+                    <div class="order-info-row">
+                        <div class="order-info-label">
+                            <i class="fas fa-wallet"></i>
+                            <span>Thanh toán</span>
+                        </div>
+                        <div class="order-info-value">
+                            <c:choose>
+                                <c:when test="${order.vnpay}">VNPay</c:when>
+                                <c:otherwise>COD (khi nhận hàng)</c:otherwise>
+                            </c:choose>
                         </div>
                     </div>
                     <div class="order-info-row">
@@ -97,6 +114,14 @@
                         </table>
                     </div>
                 </div>
+            </div>
+        </c:if>
+
+        <c:if test="${not empty order and order.vnpay and order.status eq 'PENDING'}">
+            <div class="mb-4">
+                <a href="${pageContext.request.contextPath}/payment/vnpay/pay?orderId=${order.id}" class="btn btn-souvenir btn-lg">
+                    <i class="fas fa-credit-card me-2"></i>Thanh toán VNPay ngay
+                </a>
             </div>
         </c:if>
 

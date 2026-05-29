@@ -70,6 +70,7 @@ public class DatabaseInitializer implements ServletContextListener {
             migrateProductVariantsIfNeeded(sce);
             migratePasswordResetIfNeeded(sce);
             migrateGoogleOAuthIfNeeded(sce);
+            migrateVnpayIfNeeded(sce);
             migrateStaticContentsIfNeeded(sce);
         } catch (Exception e) {
             sce.getServletContext().log("Không thể khởi tạo database: " + e.getMessage(), e);
@@ -150,6 +151,36 @@ public class DatabaseInitializer implements ServletContextListener {
                 st.execute("ALTER TABLE users MODIFY COLUMN password_hash VARCHAR(255) NULL");
             } catch (Exception ignored) {
                 // Cột đã nullable hoặc engine không hỗ trợ
+            }
+        }
+    }
+
+    private void migrateVnpayIfNeeded(ServletContextEvent sce) throws Exception {
+        if (!tableExists("orders")) {
+            return;
+        }
+        try (Connection conn = DBConnection.getConnection();
+             Statement st = conn.createStatement()) {
+            if (!columnExists(conn, "orders", "payment_method")) {
+                st.execute("ALTER TABLE orders ADD COLUMN payment_method VARCHAR(20) NOT NULL DEFAULT 'COD'");
+                sce.getServletContext().log("Đã thêm cột orders.payment_method.");
+            }
+            if (!columnExists(conn, "orders", "vnpay_txn_ref")) {
+                st.execute("ALTER TABLE orders ADD COLUMN vnpay_txn_ref VARCHAR(64) NULL");
+                sce.getServletContext().log("Đã thêm cột orders.vnpay_txn_ref.");
+            }
+            if (!columnExists(conn, "orders", "vnpay_transaction_no")) {
+                st.execute("ALTER TABLE orders ADD COLUMN vnpay_transaction_no VARCHAR(64) NULL");
+                sce.getServletContext().log("Đã thêm cột orders.vnpay_transaction_no.");
+            }
+            if (!columnExists(conn, "orders", "paid_at")) {
+                st.execute("ALTER TABLE orders ADD COLUMN paid_at DATETIME NULL");
+                sce.getServletContext().log("Đã thêm cột orders.paid_at.");
+            }
+            try {
+                st.execute("CREATE UNIQUE INDEX idx_orders_vnpay_txn ON orders (vnpay_txn_ref)");
+            } catch (Exception ignored) {
+                // Index đã tồn tại
             }
         }
     }

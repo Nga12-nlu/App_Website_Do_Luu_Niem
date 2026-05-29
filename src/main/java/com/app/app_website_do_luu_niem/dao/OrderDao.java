@@ -23,6 +23,15 @@ public interface OrderDao {
 
     void updateStatus(int id, String status);
 
+    Optional<Order> findByVnpayTxnRef(String txnRef);
+
+    void updateVnpayTxnRef(int orderId, String txnRef);
+
+    /**
+     * @return true nếu cập nhật thành công (đơn PENDING + VNPAY, đúng số tiền)
+     */
+    boolean markVnpayPaid(int orderId, String vnpayTransactionNo, java.math.BigDecimal paidAmount);
+
     java.math.BigDecimal getTotalRevenue();
 
     long countByStatus(String status);

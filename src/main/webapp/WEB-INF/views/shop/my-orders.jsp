@@ -7,6 +7,10 @@
 
 <h4 class="section-title mb-4">Đơn hàng của tôi</h4>
 
+<c:if test="${not empty error}">
+    <div class="alert alert-warning"><c:out value="${error}"/></div>
+</c:if>
+
 <c:choose>
     <c:when test="${empty orders}">
         <div class="alert alert-info text-center">
@@ -56,15 +60,29 @@
                                     <p class="text-muted mb-0"><c:out value="${order.phone}"/></p>
                                 </div>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="mb-2 small text-muted">
+                                <i class="fas fa-wallet me-1"></i>
+                                <c:choose>
+                                    <c:when test="${order.vnpay}">VNPay</c:when>
+                                    <c:otherwise>COD</c:otherwise>
+                                </c:choose>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div>
                                     <strong class="fs-5">
                                         Tổng tiền: <span class="price-value" data-price="${order.totalAmount}">${order.totalAmount}</span> &#8363;
                                     </strong>
                                 </div>
-                                <a href="${pageContext.request.contextPath}/order-success?id=${order.id}" class="btn btn-outline-souvenir">
-                                    <i class="fas fa-eye me-1"></i>Xem chi tiết
-                                </a>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <c:if test="${order.vnpay and order.status eq 'PENDING'}">
+                                        <a href="${pageContext.request.contextPath}/payment/vnpay/pay?orderId=${order.id}" class="btn btn-souvenir">
+                                            <i class="fas fa-credit-card me-1"></i>Thanh toán VNPay
+                                        </a>
+                                    </c:if>
+                                    <a href="${pageContext.request.contextPath}/order-success?id=${order.id}" class="btn btn-outline-souvenir">
+                                        <i class="fas fa-eye me-1"></i>Xem chi tiết
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>

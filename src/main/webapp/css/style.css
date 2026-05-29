@@ -389,6 +389,33 @@ main.container {
     color: #ea4335;
 }
 
+.payment-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.payment-method-option {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    cursor: pointer;
+    margin: 0;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.payment-method-option:has(input:checked) {
+    border-color: var(--primary);
+    background: rgba(44, 95, 45, 0.06);
+}
+
+.payment-method-option input {
+    flex-shrink: 0;
+}
+
 /* Fallback for simple auth-card (mobile) */
 .auth-card {
     background: white;

@@ -35,6 +35,9 @@ public class MyOrdersServlet extends HttpServlet {
 
         var orders = orderDao.findByUserId(currentUser.getId());
         req.setAttribute("orders", orders);
+        if ("vnpay_disabled".equals(req.getParameter("error"))) {
+            req.setAttribute("error", "Thanh toán VNPay chưa được bật trên hệ thống.");
+        }
         req.getRequestDispatcher("/WEB-INF/views/shop/my-orders.jsp").forward(req, resp);
     }
 }

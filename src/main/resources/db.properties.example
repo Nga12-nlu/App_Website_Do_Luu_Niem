@@ -26,3 +26,13 @@ google.oauth.client.id=
 google.oauth.client.secret=
 # Để trống = tự suy ra từ app.public.base.url hoặc request
 google.oauth.redirect.uri=
+
+# --- VNPay SANDBOX (https://sandbox.vnpayment.vn/apis/vnpay-register/) ---
+vnpay.enabled=false
+vnpay.tmn.code=
+vnpay.hash.secret=
+vnpay.pay.url=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+vnpay.version=2.1.0
+# Để trống = tự suy ra từ app.public.base.url
+vnpay.return.url=
+vnpay.ipn.url=

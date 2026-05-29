@@ -95,6 +95,21 @@
             </div>
             <div class="card-body">
                 <div class="mb-3">
+                    <strong>Thanh toán:</strong>
+                    <div class="mt-1">
+                        <c:choose>
+                            <c:when test="${order.vnpay}">VNPay</c:when>
+                            <c:otherwise>COD</c:otherwise>
+                        </c:choose>
+                        <c:if test="${not empty order.vnpayTxnRef}">
+                            <div class="small text-muted mt-1">Mã GD: <c:out value="${order.vnpayTxnRef}"/></div>
+                        </c:if>
+                        <c:if test="${not empty order.vnpayTransactionNo}">
+                            <div class="small text-muted">VNPay #<c:out value="${order.vnpayTransactionNo}"/></div>
+                        </c:if>
+                    </div>
+                </div>
+                <div class="mb-3">
                     <strong>Trạng thái hiện tại:</strong>
                     <div class="mt-2">
                         <c:choose>

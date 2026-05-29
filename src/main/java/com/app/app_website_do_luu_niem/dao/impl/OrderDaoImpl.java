@@ -10,8 +10,10 @@ import com.app.app_website_do_luu_niem.model.User;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -28,10 +30,8 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
 
     @Override
     public void saveWithItems(Order order) {
-        String orderSql = "INSERT INTO orders (user_id, total_amount, status, shipping_address, phone, created_at) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
-        String itemSql = "INSERT INTO order_items (order_id, product_id, quantity, unit_price, variant_id, variant_label) " +
-                "VALUES (?, ?, ?, ?, ?, ?)";
+        String itemSql = "INSERT INTO order_items (order_id, product_id, quantity, unit_price, variant_id, variant_label) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false);
@@ -44,23 +44,7 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
                     }
                 }
 
-                try (PreparedStatement orderPs = conn.prepareStatement(orderSql, Statement.RETURN_GENERATED_KEYS)) {
-                    orderPs.setInt(1, order.getUser().getId());
-                    orderPs.setBigDecimal(2, order.getTotalAmount());
-                    orderPs.setString(3, order.getStatus());
-                    orderPs.setString(4, order.getShippingAddress());
-                    orderPs.setString(5, order.getPhone());
-                    orderPs.setTimestamp(6, Timestamp.valueOf(
-                            order.getCreatedAt() != null ? order.getCreatedAt() : LocalDateTime.now()
-                    ));
-                    orderPs.executeUpdate();
-
-                    try (ResultSet rs = orderPs.getGeneratedKeys()) {
-                        if (rs.next()) {
-                            order.setId(rs.getInt(1));
-                        }
-                    }
-                }
+                insertOrderHeader(conn, order);
 
                 try (PreparedStatement itemPs = conn.prepareStatement(itemSql)) {
                     for (OrderItem item : order.getItems()) {
@@ -96,6 +80,53 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Lỗi lưu đơn hàng", e);
+        }
+    }
+
+    private void insertOrderHeader(Connection conn, Order order) throws SQLException {
+        boolean hasPaymentCols = hasColumn(conn, "orders", "payment_method");
+        String orderSql;
+        if (hasPaymentCols) {
+            orderSql = "INSERT INTO orders (user_id, total_amount, status, payment_method, vnpay_txn_ref, "
+                    + "shipping_address, phone, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        } else {
+            orderSql = "INSERT INTO orders (user_id, total_amount, status, shipping_address, phone, created_at) "
+                    + "VALUES (?, ?, ?, ?, ?, ?)";
+        }
+
+        try (PreparedStatement orderPs = conn.prepareStatement(orderSql, Statement.RETURN_GENERATED_KEYS)) {
+            int i = 1;
+            orderPs.setInt(i++, order.getUser().getId());
+            orderPs.setBigDecimal(i++, order.getTotalAmount());
+            orderPs.setString(i++, order.getStatus());
+            if (hasPaymentCols) {
+                String paymentMethod = order.getPaymentMethod();
+                orderPs.setString(i++, paymentMethod != null && !paymentMethod.isBlank() ? paymentMethod : "COD");
+                if (order.getVnpayTxnRef() != null && !order.getVnpayTxnRef().isBlank()) {
+                    orderPs.setString(i++, order.getVnpayTxnRef());
+                } else {
+                    orderPs.setNull(i++, java.sql.Types.VARCHAR);
+                }
+            }
+            orderPs.setString(i++, order.getShippingAddress());
+            orderPs.setString(i++, order.getPhone());
+            orderPs.setTimestamp(i, Timestamp.valueOf(
+                    order.getCreatedAt() != null ? order.getCreatedAt() : LocalDateTime.now()
+            ));
+            orderPs.executeUpdate();
+
+            try (ResultSet rs = orderPs.getGeneratedKeys()) {
+                if (rs.next()) {
+                    order.setId(rs.getInt(1));
+                }
+            }
+        }
+    }
+
+    private boolean hasColumn(Connection conn, String table, String column) throws SQLException {
+        DatabaseMetaData meta = conn.getMetaData();
+        try (ResultSet rs = meta.getColumns(null, null, table, column)) {
+            return rs.next();
         }
     }
 
@@ -355,6 +386,55 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
     }
 
     @Override
+    public Optional<Order> findByVnpayTxnRef(String txnRef) {
+        if (txnRef == null || txnRef.isBlank()) {
+            return Optional.empty();
+        }
+        String sql = "SELECT o.*, u.full_name, u.email FROM orders o "
+                + "JOIN users u ON o.user_id = u.id WHERE o.vnpay_txn_ref = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, txnRef);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapOrder(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi truy vấn đơn theo mã VNPay", e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public void updateVnpayTxnRef(int orderId, String txnRef) {
+        String sql = "UPDATE orders SET vnpay_txn_ref = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, txnRef);
+            ps.setInt(2, orderId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi cập nhật mã giao dịch VNPay", e);
+        }
+    }
+
+    @Override
+    public boolean markVnpayPaid(int orderId, String vnpayTransactionNo, BigDecimal paidAmount) {
+        String sql = "UPDATE orders SET status = 'CONFIRMED', paid_at = NOW(), vnpay_transaction_no = ? "
+                + "WHERE id = ? AND status = 'PENDING' AND payment_method = 'VNPAY' AND total_amount = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, vnpayTransactionNo);
+            ps.setInt(2, orderId);
+            ps.setBigDecimal(3, paidAmount);
+            return ps.executeUpdate() == 1;
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi xác nhận thanh toán VNPay", e);
+        }
+    }
+
+    @Override
     public java.math.BigDecimal getTotalRevenue() {
         String sql = "SELECT COALESCE(SUM(total_amount), 0) as total FROM orders WHERE status IN ('CONFIRMED', 'SHIPPED')";
         try (Connection conn = getConnection();
@@ -499,6 +579,21 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
         order.setTotalAmount(rs.getBigDecimal("total_amount") != null
                 ? rs.getBigDecimal("total_amount") : BigDecimal.ZERO);
         order.setStatus(rs.getString("status"));
+        if (hasColumn(rs, "payment_method")) {
+            order.setPaymentMethod(rs.getString("payment_method"));
+        }
+        if (hasColumn(rs, "vnpay_txn_ref")) {
+            order.setVnpayTxnRef(rs.getString("vnpay_txn_ref"));
+        }
+        if (hasColumn(rs, "vnpay_transaction_no")) {
+            order.setVnpayTransactionNo(rs.getString("vnpay_transaction_no"));
+        }
+        if (hasColumn(rs, "paid_at")) {
+            Timestamp paidAt = rs.getTimestamp("paid_at");
+            if (paidAt != null) {
+                order.setPaidAt(paidAt.toLocalDateTime());
+            }
+        }
         order.setShippingAddress(rs.getString("shipping_address"));
         order.setPhone(rs.getString("phone"));
         Timestamp createdAt = rs.getTimestamp("created_at");
@@ -506,5 +601,15 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
             order.setCreatedAt(createdAt.toLocalDateTime());
         }
         return order;
+    }
+
+    private static boolean hasColumn(ResultSet rs, String column) throws SQLException {
+        ResultSetMetaData meta = rs.getMetaData();
+        for (int i = 1; i <= meta.getColumnCount(); i++) {
+            if (column.equalsIgnoreCase(meta.getColumnLabel(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

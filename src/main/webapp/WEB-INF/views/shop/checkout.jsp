@@ -33,6 +33,30 @@
                     <input type="tel" name="phone" class="form-control" required placeholder="Số điện thoại liên hệ" pattern="[0-9]{10,11}">
                     <small class="text-muted">Nhập số điện thoại 10-11 chữ số</small>
                 </div>
+                <div class="mb-0">
+                    <label class="form-label">Phương thức thanh toán *</label>
+                    <div class="payment-methods">
+                        <label class="payment-method-option">
+                            <input type="radio" name="paymentMethod" value="COD" checked>
+                            <span><i class="fas fa-money-bill-wave me-2"></i>Thanh toán khi nhận hàng (COD)</span>
+                        </label>
+                        <c:if test="${vnpayEnabled}">
+                            <label class="payment-method-option">
+                                <input type="radio" name="paymentMethod" value="VNPAY">
+                                <span><i class="fas fa-credit-card me-2"></i>Thanh toán VNPay Sandbox (thẻ / QR)</span>
+                            </label>
+                        </c:if>
+                    </div>
+                    <c:if test="${vnpayFeatureOn and not vnpayEnabled}">
+                        <div class="alert alert-warning mt-2 mb-0 py-2 small">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            <c:out value="${vnpayConfigWarning}"/>
+                        </div>
+                    </c:if>
+                    <c:if test="${not vnpayFeatureOn}">
+                        <small class="text-muted d-block mt-2">VNPay chưa bật — chỉ hỗ trợ COD.</small>
+                    </c:if>
+                </div>
             </div>
         </div>
     </div>
@@ -63,7 +87,7 @@
                     <strong><i class="fas fa-coins me-2"></i>Tổng cộng:</strong>
                     <strong><span class="price-value" data-price="${totalAmount}">${totalAmount}</span> &#8363;</strong>
                 </div>
-                <button type="submit" class="btn btn-souvenir w-100 mt-3"><i class="fas fa-check me-2"></i>Đặt hàng</button>
+                <button type="submit" class="btn btn-souvenir w-100 mt-3"><i class="fas fa-check me-2"></i>Hoàn tất đặt hàng</button>
             </div>
         </div>
     </div>
