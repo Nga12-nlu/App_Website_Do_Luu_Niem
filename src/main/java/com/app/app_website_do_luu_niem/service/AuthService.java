@@ -8,6 +8,7 @@ import com.app.app_website_do_luu_niem.dao.impl.UserDaoImpl;
 import com.app.app_website_do_luu_niem.model.PasswordResetToken;
 import com.app.app_website_do_luu_niem.model.User;
 import com.app.app_website_do_luu_niem.service.GoogleOAuthService.GoogleUserInfo;
+import com.app.app_website_do_luu_niem.util.AppUrlHelper;
 import com.app.app_website_do_luu_niem.util.TokenHasher;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -212,26 +213,7 @@ public class AuthService {
     }
 
     private String buildResetUrl(HttpServletRequest req, String rawToken) {
-        String base = AppConfig.getPublicBaseUrl();
-        String ctxPath = req.getContextPath();
-        if (base.isEmpty()) {
-            int port = req.getServerPort();
-            String scheme = req.getScheme();
-            String host = req.getServerName();
-            boolean defaultPort = ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443);
-            base = scheme + "://" + host + (defaultPort ? "" : ":" + port) + ctxPath;
-        } else if (shouldAppendContextPath(base, ctxPath)) {
-            // Tránh lỗi 404 khi cấu hình base URL không chứa đúng context path local hiện tại.
-            base = base + ctxPath;
-        }
-        return base + "/reset-password?token=" + URLEncoder.encode(rawToken, StandardCharsets.UTF_8);
-    }
-
-    private boolean shouldAppendContextPath(String baseUrl, String contextPath) {
-        if (contextPath == null || contextPath.isBlank() || "/".equals(contextPath)) {
-            return false;
-        }
-        return !(baseUrl.endsWith(contextPath) || baseUrl.contains(contextPath + "/"));
+        return AppUrlHelper.absolutePath(req, "/reset-password?token=" + URLEncoder.encode(rawToken, StandardCharsets.UTF_8));
     }
 
     private static String normalizeEmail(String email) {

@@ -21,9 +21,21 @@ public final class AppUrlHelper {
             boolean defaultPort = ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443);
             return scheme + "://" + host + (defaultPort ? "" : ":" + port) + ctx;
         }
-        if (ctx != null && !ctx.isBlank() && !"/".equals(ctx)
-                && !base.endsWith(ctx) && !base.contains(ctx + "/")) {
-            return base + ctx;
+        if (ctx != null && !ctx.isBlank() && !"/".equals(ctx)) {
+            try {
+                java.net.URI uri = java.net.URI.create(base);
+                String path = uri.getPath();
+                if (path == null || path.isEmpty() || "/".equals(path)) {
+                    return base + ctx;
+                } else if (!path.equals(ctx) && !path.startsWith(ctx + "/")) {
+                    String schemeHostPort = base.substring(0, base.indexOf(path));
+                    return schemeHostPort + ctx;
+                }
+            } catch (Exception e) {
+                if (!base.endsWith(ctx) && !base.contains(ctx + "/")) {
+                    return base + ctx;
+                }
+            }
         }
         return base;
     }

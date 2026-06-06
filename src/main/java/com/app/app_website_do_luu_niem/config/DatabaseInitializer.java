@@ -306,14 +306,14 @@ public class DatabaseInitializer implements ServletContextListener {
 
     private boolean columnExists(Connection conn, String tableName, String columnName) throws Exception {
         DatabaseMetaData md = conn.getMetaData();
-        try (ResultSet rs = md.getColumns(null, null, tableName, columnName)) {
+        try (ResultSet rs = md.getColumns(conn.getCatalog(), null, tableName, columnName)) {
             return rs.next();
         }
     }
 
     private boolean tableExists(String tableName) {
         try (Connection conn = DBConnection.getConnection();
-             ResultSet rs = conn.getMetaData().getTables(null, null, tableName, null)) {
+             ResultSet rs = conn.getMetaData().getTables(conn.getCatalog(), null, tableName, null)) {
             return rs.next();
         } catch (Exception e) {
             return false;

@@ -1,6 +1,7 @@
 package com.app.app_website_do_luu_niem.service;
 
 import com.app.app_website_do_luu_niem.config.AppConfig;
+import com.app.app_website_do_luu_niem.util.AppUrlHelper;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
@@ -45,18 +46,7 @@ public class GoogleOAuthService {
         if (!override.isEmpty()) {
             return override;
         }
-        String base = AppConfig.getPublicBaseUrl();
-        String ctx = req.getContextPath();
-        if (base.isEmpty()) {
-            int port = req.getServerPort();
-            String scheme = req.getScheme();
-            String host = req.getServerName();
-            boolean defaultPort = ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443);
-            base = scheme + "://" + host + (defaultPort ? "" : ":" + port) + ctx;
-        } else if (!base.endsWith(ctx) && !base.contains(ctx + "/") && ctx != null && !ctx.isBlank() && !"/".equals(ctx)) {
-            base = base + ctx;
-        }
-        return base + "/auth/google/callback";
+        return AppUrlHelper.absolutePath(req, "/auth/google/callback");
     }
 
     public GoogleTokenResponse exchangeCode(String code, String redirectUri) throws Exception {
