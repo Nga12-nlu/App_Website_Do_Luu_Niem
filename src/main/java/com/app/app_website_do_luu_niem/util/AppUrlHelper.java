@@ -28,7 +28,7 @@ public final class AppUrlHelper {
                 if (path == null || path.isEmpty() || "/".equals(path)) {
                     return base + ctx;
                 } else if (!path.equals(ctx) && !path.startsWith(ctx + "/")) {
-                    String schemeHostPort = base.substring(0, base.indexOf(path));
+                    String schemeHostPort = uri.getScheme() + "://" + uri.getAuthority();
                     return schemeHostPort + ctx;
                 }
             } catch (Exception e) {

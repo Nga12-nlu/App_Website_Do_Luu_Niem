@@ -52,11 +52,29 @@ public class CheckoutService {
     }
 
     public BigDecimal calculateShippingFee(BigDecimal subtotalAfterDiscount, String provinceCode) {
-        BigDecimal base = AppConfig.getShippingBaseFee();
+        return calculateShippingFee(subtotalAfterDiscount, provinceCode, null, null);
+    }
+
+    public BigDecimal calculateShippingFee(BigDecimal subtotalAfterDiscount, String provinceCode, String districtCode, String wardCode) {
         BigDecimal freeThreshold = AppConfig.getShippingFreeThreshold();
         if (subtotalAfterDiscount.compareTo(freeThreshold) >= 0) {
             return BigDecimal.ZERO;
         }
+
+        if (AppConfig.isGhnEnabled() && districtCode != null && !districtCode.isBlank() && wardCode != null && !wardCode.isBlank()) {
+            try {
+                int toDistrictId = Integer.parseInt(districtCode.trim());
+                GhnShippingService ghnService = new GhnShippingService();
+                int weight = AppConfig.getGhnDefaultWeight();
+                return ghnService.calculateShippingFee(toDistrictId, wardCode.trim(), weight, subtotalAfterDiscount);
+            } catch (Exception e) {
+                // System fallback on any exception
+                System.err.println("GHN Shipping Fee calculation failed, falling back to local: " + e.getMessage());
+            }
+        }
+
+        // Fallback to local flat fee
+        BigDecimal base = AppConfig.getShippingBaseFee();
         BigDecimal fee = base;
         if (provinceCode != null && AppConfig.isRemoteProvince(provinceCode)) {
             fee = fee.add(AppConfig.getShippingRemoteSurcharge());
@@ -65,6 +83,10 @@ public class CheckoutService {
     }
 
     public CheckoutQuote buildQuote(List<CartItem> cart, String couponCode, Integer userId, String provinceCode) {
+        return buildQuote(cart, couponCode, userId, provinceCode, null, null);
+    }
+
+    public CheckoutQuote buildQuote(List<CartItem> cart, String couponCode, Integer userId, String provinceCode, String districtCode, String wardCode) {
         CheckoutQuote quote = new CheckoutQuote();
         quote.setSubtotal(calculateSubtotal(cart));
 
@@ -87,7 +109,7 @@ public class CheckoutService {
         if (afterDiscount.compareTo(BigDecimal.ZERO) < 0) {
             afterDiscount = BigDecimal.ZERO;
         }
-        BigDecimal shipping = calculateShippingFee(afterDiscount, provinceCode);
+        BigDecimal shipping = calculateShippingFee(afterDiscount, provinceCode, districtCode, wardCode);
         if (quote.isCouponApplied() && quote.getCouponCode() != null
                 && "FREESHIP".equalsIgnoreCase(quote.getCouponCode().trim())) {
             shipping = BigDecimal.ZERO;

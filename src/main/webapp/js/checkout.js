@@ -110,9 +110,15 @@
 
     function refreshQuote() {
         var provinceCode = document.getElementById('provinceCode').value;
+        var districtCode = document.getElementById('districtCode').value;
+        var wardCode = document.getElementById('wardCode').value;
         var url = base + '/api/checkout/quote';
-        if (provinceCode) {
-            url += '?provinceCode=' + encodeURIComponent(provinceCode);
+        var params = [];
+        if (provinceCode) params.push('provinceCode=' + encodeURIComponent(provinceCode));
+        if (districtCode) params.push('districtCode=' + encodeURIComponent(districtCode));
+        if (wardCode) params.push('wardCode=' + encodeURIComponent(wardCode));
+        if (params.length > 0) {
+            url += '?' + params.join('&');
         }
         return apiGet(url).then(function (data) {
             updateQuoteDisplay(data.quote);
@@ -224,9 +230,13 @@
     document.getElementById('btnApplyCoupon').addEventListener('click', function () {
         var code = document.getElementById('couponCodeInput').value.trim();
         var provinceCode = document.getElementById('provinceCode').value;
+        var districtCode = document.getElementById('districtCode').value;
+        var wardCode = document.getElementById('wardCode').value;
         var body = new URLSearchParams();
         body.set('code', code);
         if (provinceCode) body.set('provinceCode', provinceCode);
+        if (districtCode) body.set('districtCode', districtCode);
+        if (wardCode) body.set('wardCode', wardCode);
         fetch(base + '/api/coupon/apply', {
             method: 'POST',
             credentials: 'same-origin',
@@ -250,8 +260,12 @@
 
     document.getElementById('btnRemoveCoupon').addEventListener('click', function () {
         var provinceCode = document.getElementById('provinceCode').value;
+        var districtCode = document.getElementById('districtCode').value;
+        var wardCode = document.getElementById('wardCode').value;
         var body = new URLSearchParams();
         if (provinceCode) body.set('provinceCode', provinceCode);
+        if (districtCode) body.set('districtCode', districtCode);
+        if (wardCode) body.set('wardCode', wardCode);
         fetch(base + '/api/coupon/remove', {
             method: 'POST',
             credentials: 'same-origin',

@@ -14,6 +14,9 @@ public class AddressApiService {
     public AddressApiService() {
         providers.put("open-api", new OpenApiVnProvider());
         providers.put("vnappmob", new VnappmobProvider());
+        if (AppConfig.isGhnEnabled()) {
+            providers.put("ghn", new GhnProvider());
+        }
     }
 
     public List<String> listProviderIds() {

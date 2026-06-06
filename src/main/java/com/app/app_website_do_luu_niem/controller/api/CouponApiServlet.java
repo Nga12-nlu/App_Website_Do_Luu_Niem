@@ -55,10 +55,12 @@ public class CouponApiServlet extends HttpServlet {
         }
         Integer userId = user.getId();
         String provinceCode = req.getParameter("provinceCode");
+        String districtCode = req.getParameter("districtCode");
+        String wardCode = req.getParameter("wardCode");
 
         if ("/remove".equals(path)) {
             session.removeAttribute(CouponService.SESSION_APPLIED_COUPON);
-            CheckoutQuote quote = checkoutService.buildQuote(cart, null, userId, provinceCode);
+            CheckoutQuote quote = checkoutService.buildQuote(cart, null, userId, provinceCode, districtCode, wardCode);
             writeQuote(resp, quote, null);
             return;
         }
@@ -71,7 +73,7 @@ public class CouponApiServlet extends HttpServlet {
             return;
         }
         session.setAttribute(CouponService.SESSION_APPLIED_COUPON, v.code());
-        CheckoutQuote quote = checkoutService.buildQuote(cart, v.code(), userId, provinceCode);
+        CheckoutQuote quote = checkoutService.buildQuote(cart, v.code(), userId, provinceCode, districtCode, wardCode);
         writeQuote(resp, quote, v.message());
     }
 

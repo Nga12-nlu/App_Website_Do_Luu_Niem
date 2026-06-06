@@ -119,7 +119,7 @@ public class CheckoutServlet extends HttpServlet {
 
         checkoutService.refreshCartFromDatabase(cart);
         String sessionCoupon = (String) session.getAttribute(CouponService.SESSION_APPLIED_COUPON);
-        CheckoutQuote quote = checkoutService.buildQuote(cart, sessionCoupon, currentUser.getId(), provinceCode);
+        CheckoutQuote quote = checkoutService.buildQuote(cart, sessionCoupon, currentUser.getId(), provinceCode, districtCode, wardCode);
         if (sessionCoupon != null && !sessionCoupon.isBlank() && !quote.isCouponApplied()) {
             session.removeAttribute(CouponService.SESSION_APPLIED_COUPON);
             forwardCheckoutError(req, resp, cart, currentUser,
@@ -264,7 +264,7 @@ public class CheckoutServlet extends HttpServlet {
         req.setAttribute("error", error);
         req.setAttribute("cartItems", cart);
         String couponCode = (String) req.getSession().getAttribute(CouponService.SESSION_APPLIED_COUPON);
-        CheckoutQuote quote = checkoutService.buildQuote(cart, couponCode, user.getId(), provinceCode);
+        CheckoutQuote quote = checkoutService.buildQuote(cart, couponCode, user.getId(), provinceCode, districtCode, wardCode);
         req.setAttribute("quote", quote);
         req.setAttribute("formReceiverName", receiverName);
         req.setAttribute("formPhone", phone);
@@ -286,6 +286,7 @@ public class CheckoutServlet extends HttpServlet {
         req.setAttribute("vnpayEnabled", AppConfig.isVnpayEnabled());
         req.setAttribute("vnpayFeatureOn", AppConfig.isVnpayFeatureOn());
         req.setAttribute("vnpaySandbox", AppConfig.isVnpaySandbox());
+        req.setAttribute("ghnEnabled", AppConfig.isGhnEnabled());
         if (AppConfig.isVnpayFeatureOn() && !AppConfig.isVnpayEnabled()) {
             req.setAttribute("vnpayConfigWarning",
                     "VNPay sandbox đã bật — hãy điền vnpay.tmn.code và vnpay.hash.secret trong db.properties.");

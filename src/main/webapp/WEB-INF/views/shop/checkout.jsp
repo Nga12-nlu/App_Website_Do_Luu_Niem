@@ -66,6 +66,9 @@
                         <select class="form-select" id="addressProvider" aria-describedby="providerHelp">
                             <option value="open-api">Open API Vietnam (provinces.open-api.vn)</option>
                             <option value="vnappmob">VNAppMob (vapi.vnappmob.com)</option>
+                            <c:if test="${ghnEnabled}">
+                                <option value="ghn">Giao Hàng Nhanh (GHN API)</option>
+                            </c:if>
                         </select>
                         <div id="providerHelp" class="form-text">Chọn API nếu một nguồn tải chậm hoặc lỗi.</div>
                     </div>

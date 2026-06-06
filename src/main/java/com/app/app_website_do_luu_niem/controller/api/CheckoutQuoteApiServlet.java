@@ -48,9 +48,11 @@ public class CheckoutQuoteApiServlet extends HttpServlet {
         }
         Integer userId = user.getId();
         String provinceCode = req.getParameter("provinceCode");
+        String districtCode = req.getParameter("districtCode");
+        String wardCode = req.getParameter("wardCode");
         String couponCode = (String) session.getAttribute(CouponService.SESSION_APPLIED_COUPON);
 
-        CheckoutQuote quote = checkoutService.buildQuote(cart, couponCode, userId, provinceCode);
+        CheckoutQuote quote = checkoutService.buildQuote(cart, couponCode, userId, provinceCode, districtCode, wardCode);
         Map<String, Object> body = new HashMap<>();
         body.put("success", true);
         body.put("quote", quoteMap(quote));

@@ -135,6 +135,9 @@ public final class AppConfig {
 
     public static String getAddressApiProvider() {
         String p = nullToEmpty(PROPS.getProperty("address.api.provider", "open-api"));
+        if ("ghn".equalsIgnoreCase(p) && !isGhnEnabled()) {
+            return "open-api";
+        }
         return p.isEmpty() ? "open-api" : p;
     }
 
@@ -161,6 +164,55 @@ public final class AppConfig {
             }
         }
         return false;
+    }
+
+    public static boolean isGhnEnabled() {
+        return Boolean.parseBoolean(PROPS.getProperty("ghn.enabled", "false"))
+                && !getGhnApiToken().isEmpty();
+    }
+
+    public static String getGhnApiUrl() {
+        String url = PROPS.getProperty("ghn.api.url", "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/");
+        if (!url.endsWith("/")) {
+            url += "/";
+        }
+        return url;
+    }
+
+    public static String getGhnApiToken() {
+        return nullToEmpty(PROPS.getProperty("ghn.api.token"));
+    }
+
+    public static String getGhnShopId() {
+        return nullToEmpty(PROPS.getProperty("ghn.shop.id"));
+    }
+
+    public static int getGhnFromDistrictId() {
+        try {
+            return Integer.parseInt(PROPS.getProperty("ghn.from.district.id", "1454").trim());
+        } catch (Exception e) {
+            return 1454;
+        }
+    }
+
+    public static String getGhnFromWardCode() {
+        return nullToEmpty(PROPS.getProperty("ghn.from.ward.code", "21211"));
+    }
+
+    public static int getGhnDefaultWeight() {
+        try {
+            return Integer.parseInt(PROPS.getProperty("ghn.default.weight", "500").trim());
+        } catch (Exception e) {
+            return 500;
+        }
+    }
+
+    public static int getGhnServiceTypeId() {
+        try {
+            return Integer.parseInt(PROPS.getProperty("ghn.service.type.id", "2").trim());
+        } catch (Exception e) {
+            return 2;
+        }
     }
 
     private static java.math.BigDecimal parseDecimal(String value, String defaultValue) {

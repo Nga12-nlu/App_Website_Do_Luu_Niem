@@ -44,9 +44,9 @@ public final class VNPayUtil {
             if (value == null || value.isEmpty()) {
                 continue;
             }
-            sb.append(URLEncoder.encode(name, StandardCharsets.US_ASCII));
+            sb.append(URLEncoder.encode(name, StandardCharsets.UTF_8));
             sb.append('=');
-            sb.append(URLEncoder.encode(value, StandardCharsets.US_ASCII));
+            sb.append(URLEncoder.encode(value, StandardCharsets.UTF_8));
             sb.append('&');
         }
         if (!sb.isEmpty()) {
@@ -92,9 +92,9 @@ public final class VNPayUtil {
             if (value == null || value.isEmpty()) {
                 continue;
             }
-            sb.append(URLEncoder.encode(name, StandardCharsets.US_ASCII));
+            sb.append(URLEncoder.encode(name, StandardCharsets.UTF_8));
             sb.append('=');
-            sb.append(URLEncoder.encode(value, StandardCharsets.US_ASCII));
+            sb.append(URLEncoder.encode(value, StandardCharsets.UTF_8));
             sb.append('&');
         }
         if (!sb.isEmpty()) {
