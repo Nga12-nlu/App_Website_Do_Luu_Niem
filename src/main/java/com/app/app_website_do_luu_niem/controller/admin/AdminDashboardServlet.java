@@ -37,7 +37,10 @@ public class AdminDashboardServlet extends HttpServlet {
         int totalOrders = orderDao.countAll(null, null);
         BigDecimal totalRevenue = orderDao.getTotalRevenue();
         long pendingOrders = orderDao.countByStatus("PENDING");
-        long confirmedOrders = orderDao.countByStatus("CONFIRMED");
+        long confirmedOrders = orderDao.countByStatus("CONFIRMED")
+                + orderDao.countByStatus("PACKAGING")
+                + orderDao.countByStatus("AWAITING_SHIPPING")
+                + orderDao.countByStatus("SHIPPING");
         long shippedOrders = orderDao.countByStatus("SHIPPED");
         long cancelledOrders = orderDao.countByStatus("CANCELLED");
 

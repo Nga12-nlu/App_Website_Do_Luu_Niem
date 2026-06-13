@@ -61,16 +61,11 @@
                     <h5 class="mb-0">Địa chỉ giao hàng</h5>
                 </div>
                 <div class="checkout-card-body">
-                    <div class="mb-3">
+                    <div class="mb-3" style="display: none;">
                         <label class="form-label" for="addressProvider">Nguồn dữ liệu địa chỉ</label>
                         <select class="form-select" id="addressProvider" aria-describedby="providerHelp">
-                            <option value="open-api">Open API Vietnam (provinces.open-api.vn)</option>
-                            <option value="vnappmob">VNAppMob (vapi.vnappmob.com)</option>
-                            <c:if test="${ghnEnabled}">
-                                <option value="ghn">Giao Hàng Nhanh (GHN API)</option>
-                            </c:if>
+                            <option value="ghn" selected>Giao Hàng Nhanh (GHN API)</option>
                         </select>
-                        <div id="providerHelp" class="form-text">Chọn API nếu một nguồn tải chậm hoặc lỗi.</div>
                     </div>
                     <div class="row g-3">
                         <div class="col-md-4">

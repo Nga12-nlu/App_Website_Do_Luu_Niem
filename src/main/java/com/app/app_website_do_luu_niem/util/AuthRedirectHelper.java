@@ -16,6 +16,7 @@ public final class AuthRedirectHelper {
             throws IOException {
         HttpSession session = req.getSession(true);
         session.setAttribute("currentUser", user);
+        session.setAttribute("loginTime", java.time.LocalDateTime.now());
 
         if (redirect != null && !redirect.isBlank() && isSafeRedirect(req, redirect)) {
             resp.sendRedirect(redirect);

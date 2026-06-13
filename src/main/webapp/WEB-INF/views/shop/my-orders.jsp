@@ -39,17 +39,99 @@
                                     </small>
                                 </div>
                                 <div>
-                                    <span class="badge ${order.status eq 'CONFIRMED' ? 'bg-success' : order.status eq 'CANCELLED' ? 'bg-danger' : order.status eq 'SHIPPED' ? 'bg-info' : 'bg-warning'} fs-6">
+                                    <span class="badge <c:choose>
+                                        <c:when test="${order.status eq 'SHIPPED'}">bg-success</c:when>
+                                        <c:when test="${order.status eq 'CANCELLED'}">bg-danger</c:when>
+                                        <c:when test="${order.status eq 'SHIPPING'}">bg-primary</c:when>
+                                        <c:otherwise>bg-warning text-dark</c:otherwise>
+                                    </c:choose> fs-6">
                                         <c:choose>
                                             <c:when test="${order.status eq 'PENDING'}">Chờ xử lý</c:when>
-                                            <c:when test="${order.status eq 'CONFIRMED'}">Đã xác nhận</c:when>
-                                            <c:when test="${order.status eq 'SHIPPED'}">Đã giao</c:when>
+                                            <c:when test="${order.status eq 'PACKAGING'}">Đang đóng gói</c:when>
+                                            <c:when test="${order.status eq 'AWAITING_SHIPPING'}">Chờ giao ĐVVC</c:when>
+                                            <c:when test="${order.status eq 'SHIPPING'}">Đang giao hàng</c:when>
+                                            <c:when test="${order.status eq 'SHIPPED'}">Đã giao hàng</c:when>
                                             <c:when test="${order.status eq 'CANCELLED'}">Đã hủy</c:when>
                                             <c:otherwise>${order.status}</c:otherwise>
                                         </c:choose>
                                     </span>
                                 </div>
                             </div>
+
+                            <!-- Timeline Tiến trình Đơn hàng -->
+                            <c:if test="${order.status ne 'CANCELLED'}">
+                                <c:set var="status" value="${order.status}"/>
+                                <c:choose>
+                                    <c:when test="${status eq 'PENDING'}">
+                                        <c:set var="step" value="1"/>
+                                        <c:set var="pct" value="0"/>
+                                    </c:when>
+                                    <c:when test="${status eq 'PACKAGING'}">
+                                        <c:set var="step" value="2"/>
+                                        <c:set var="pct" value="25"/>
+                                    </c:when>
+                                    <c:when test="${status eq 'AWAITING_SHIPPING'}">
+                                        <c:set var="step" value="3"/>
+                                        <c:set var="pct" value="50"/>
+                                    </c:when>
+                                    <c:when test="${status eq 'SHIPPING'}">
+                                        <c:set var="step" value="4"/>
+                                        <c:set var="pct" value="75"/>
+                                    </c:when>
+                                    <c:when test="${status eq 'SHIPPED'}">
+                                        <c:set var="step" value="5"/>
+                                        <c:set var="pct" value="100"/>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <c:set var="step" value="1"/>
+                                        <c:set var="pct" value="0"/>
+                                    </c:otherwise>
+                                </c:choose>
+                                <div class="order-timeline-container my-4 px-2">
+                                    <div class="row text-center position-relative">
+                                        <!-- Line Background -->
+                                        <div class="position-absolute start-0 end-0 translate-middle-y bg-secondary-subtle" style="height: 4px; top: 18px; z-index: 1;"></div>
+                                        <!-- Line Active -->
+                                        <div class="position-absolute start-0 translate-middle-y bg-success" style="height: 4px; top: 18px; width: ${pct}%; z-index: 1; transition: width 0.5s ease;"></div>
+                                        
+                                        <!-- Step 1 -->
+                                        <div class="col position-relative" style="z-index: 2;">
+                                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle ${step >= 1 ? 'bg-success text-white' : 'bg-light text-muted border'}" style="width: 36px; height: 36px;">
+                                                <i class="fas fa-file-invoice" style="font-size: 14px;"></i>
+                                            </div>
+                                            <div class="small mt-2 fw-semibold d-none d-sm-block">Nhận đơn</div>
+                                        </div>
+                                        <!-- Step 2 -->
+                                        <div class="col position-relative" style="z-index: 2;">
+                                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle ${step >= 2 ? 'bg-success text-white' : 'bg-light text-muted border'}" style="width: 36px; height: 36px;">
+                                                <i class="fas fa-box" style="font-size: 14px;"></i>
+                                            </div>
+                                            <div class="small mt-2 fw-semibold d-none d-sm-block">Đóng gói</div>
+                                        </div>
+                                        <!-- Step 3 -->
+                                        <div class="col position-relative" style="z-index: 2;">
+                                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle ${step >= 3 ? 'bg-success text-white' : 'bg-light text-muted border'}" style="width: 36px; height: 36px;">
+                                                <i class="fas fa-truck-loading" style="font-size: 14px;"></i>
+                                            </div>
+                                            <div class="small mt-2 fw-semibold d-none d-sm-block">Chờ ĐVVC</div>
+                                        </div>
+                                        <!-- Step 4 -->
+                                        <div class="col position-relative" style="z-index: 2;">
+                                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle ${step >= 4 ? 'bg-success text-white' : 'bg-light text-muted border'}" style="width: 36px; height: 36px;">
+                                                <i class="fas fa-shipping-fast" style="font-size: 14px;"></i>
+                                            </div>
+                                            <div class="small mt-2 fw-semibold d-none d-sm-block">Đang giao</div>
+                                        </div>
+                                        <!-- Step 5 -->
+                                        <div class="col position-relative" style="z-index: 2;">
+                                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle ${step >= 5 ? 'bg-success text-white' : 'bg-light text-muted border'}" style="width: 36px; height: 36px;">
+                                                <i class="fas fa-check-circle" style="font-size: 14px;"></i>
+                                            </div>
+                                            <div class="small mt-2 fw-semibold d-none d-sm-block">Đã giao</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </c:if>
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <p class="mb-1"><strong>Địa chỉ giao hàng:</strong></p>

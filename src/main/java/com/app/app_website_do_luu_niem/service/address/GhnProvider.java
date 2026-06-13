@@ -25,9 +25,19 @@ public class GhnProvider implements AddressDataProvider {
         return "ghn";
     }
 
+    private String getMasterDataUrl(String endpoint) {
+        String base = AppConfig.getGhnApiUrl();
+        if (base.endsWith("/v2/")) {
+            base = base.substring(0, base.length() - 3);
+        } else if (base.endsWith("/v2")) {
+            base = base.substring(0, base.length() - 2);
+        }
+        return base + endpoint;
+    }
+
     @Override
     public List<AddressPlace> fetchProvinces() throws Exception {
-        String url = AppConfig.getGhnApiUrl() + "master-data/province";
+        String url = getMasterDataUrl("master-data/province");
         JsonObject json = getJson(url);
         List<AddressPlace> list = new ArrayList<>();
         if (json.has("data") && json.get("data").isJsonArray()) {
@@ -44,7 +54,7 @@ public class GhnProvider implements AddressDataProvider {
 
     @Override
     public List<AddressPlace> fetchDistricts(String provinceCode) throws Exception {
-        String url = AppConfig.getGhnApiUrl() + "master-data/district";
+        String url = getMasterDataUrl("master-data/district");
         int provId = Integer.parseInt(provinceCode.trim());
         String body = "{\"province_id\":" + provId + "}";
         JsonObject json = postJson(url, body);
@@ -63,7 +73,7 @@ public class GhnProvider implements AddressDataProvider {
 
     @Override
     public List<AddressPlace> fetchWards(String districtCode) throws Exception {
-        String url = AppConfig.getGhnApiUrl() + "master-data/ward";
+        String url = getMasterDataUrl("master-data/ward");
         int distId = Integer.parseInt(districtCode.trim());
         String body = "{\"district_id\":" + distId + "}";
         JsonObject json = postJson(url, body);

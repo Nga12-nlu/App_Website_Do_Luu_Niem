@@ -31,6 +31,14 @@
                     <input type="email" name="email" class="form-control" placeholder="Nhập email" required>
                 </div>
                 <div class="mb-3">
+                    <label class="form-label">Tên đăng nhập (Username)</label>
+                    <input type="text" name="username" class="form-control" placeholder="Nhập tên đăng nhập (tùy chọn)">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Số điện thoại</label>
+                    <input type="tel" name="phone" class="form-control" placeholder="Nhập số điện thoại (tùy chọn)">
+                </div>
+                <div class="mb-3">
                     <label class="form-label">Mật khẩu</label>
                     <input type="password" name="password" class="form-control" placeholder="8+ ký tự, có chữ và số" minlength="8" maxlength="128" required>
                 </div>

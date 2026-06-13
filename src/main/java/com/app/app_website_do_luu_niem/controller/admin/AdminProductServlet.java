@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
+import com.app.app_website_do_luu_niem.util.SystemLogHelper;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -108,8 +109,10 @@ public class AdminProductServlet extends HttpServlet {
 
         if (product.getId() == 0) {
             productDao.save(product);
+            SystemLogHelper.log(req, "CREATE_PRODUCT", "PRODUCT", "Thêm mới sản phẩm: " + product.getName() + " (id=" + product.getId() + ")");
         } else {
             productDao.update(product);
+            SystemLogHelper.log(req, "UPDATE_PRODUCT", "PRODUCT", "Cập nhật sản phẩm id=" + product.getId() + ", tên=" + product.getName());
         }
 
         List<ProductVariant> variants = parseVariantsFromRequest(req);
@@ -281,7 +284,11 @@ public class AdminProductServlet extends HttpServlet {
         if (idParam != null) {
             try {
                 int id = Integer.parseInt(idParam);
-                productDao.delete(id);
+                Optional<Product> opt = productDao.findById(id);
+                if (opt.isPresent()) {
+                    productDao.delete(id);
+                    SystemLogHelper.log(req, "DELETE_PRODUCT", "PRODUCT", "Xóa sản phẩm id=" + id + ", tên=" + opt.get().getName());
+                }
             } catch (NumberFormatException ignored) {
             }
         }

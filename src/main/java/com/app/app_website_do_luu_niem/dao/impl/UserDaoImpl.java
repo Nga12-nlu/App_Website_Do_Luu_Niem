@@ -223,25 +223,34 @@ public class UserDaoImpl extends BaseDao implements UserDao {
 
     @Override
     public void save(User user) {
-        String sql = "INSERT INTO users (email, password_hash, google_id, full_name, role, active, created_at) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO users (email, username, phone, password_hash, google_id, full_name, role, active, status, failed_logins, lock_time, created_at) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, user.getEmail());
+            ps.setString(2, user.getUsername());
+            ps.setString(3, user.getPhone());
             if (user.getPasswordHash() != null) {
-                ps.setString(2, user.getPasswordHash());
+                ps.setString(4, user.getPasswordHash());
             } else {
-                ps.setNull(2, java.sql.Types.VARCHAR);
+                ps.setNull(4, java.sql.Types.VARCHAR);
             }
             if (user.getGoogleId() != null && !user.getGoogleId().isBlank()) {
-                ps.setString(3, user.getGoogleId());
+                ps.setString(5, user.getGoogleId());
             } else {
-                ps.setNull(3, java.sql.Types.VARCHAR);
+                ps.setNull(5, java.sql.Types.VARCHAR);
             }
-            ps.setString(4, user.getFullName());
-            ps.setString(5, user.getRole());
-            ps.setBoolean(6, user.isActive());
-            ps.setTimestamp(7, Timestamp.valueOf(
+            ps.setString(6, user.getFullName());
+            ps.setString(7, user.getRole());
+            ps.setBoolean(8, user.isActive());
+            ps.setString(9, user.getStatus());
+            ps.setInt(10, user.getFailedLogins());
+            if (user.getLockTime() != null) {
+                ps.setTimestamp(11, Timestamp.valueOf(user.getLockTime()));
+            } else {
+                ps.setNull(11, java.sql.Types.TIMESTAMP);
+            }
+            ps.setTimestamp(12, Timestamp.valueOf(
                     user.getCreatedAt() != null ? user.getCreatedAt() : LocalDateTime.now()
             ));
             ps.executeUpdate();
@@ -257,24 +266,33 @@ public class UserDaoImpl extends BaseDao implements UserDao {
 
     @Override
     public void update(User user) {
-        String sql = "UPDATE users SET email = ?, password_hash = ?, google_id = ?, full_name = ?, role = ?, active = ? WHERE id = ?";
+        String sql = "UPDATE users SET email = ?, username = ?, phone = ?, password_hash = ?, google_id = ?, full_name = ?, role = ?, active = ?, status = ?, failed_logins = ?, lock_time = ? WHERE id = ?";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, user.getEmail());
+            ps.setString(2, user.getUsername());
+            ps.setString(3, user.getPhone());
             if (user.getPasswordHash() != null) {
-                ps.setString(2, user.getPasswordHash());
+                ps.setString(4, user.getPasswordHash());
             } else {
-                ps.setNull(2, java.sql.Types.VARCHAR);
+                ps.setNull(4, java.sql.Types.VARCHAR);
             }
             if (user.getGoogleId() != null && !user.getGoogleId().isBlank()) {
-                ps.setString(3, user.getGoogleId());
+                ps.setString(5, user.getGoogleId());
             } else {
-                ps.setNull(3, java.sql.Types.VARCHAR);
+                ps.setNull(5, java.sql.Types.VARCHAR);
             }
-            ps.setString(4, user.getFullName());
-            ps.setString(5, user.getRole());
-            ps.setBoolean(6, user.isActive());
-            ps.setInt(7, user.getId());
+            ps.setString(6, user.getFullName());
+            ps.setString(7, user.getRole());
+            ps.setBoolean(8, user.isActive());
+            ps.setString(9, user.getStatus());
+            ps.setInt(10, user.getFailedLogins());
+            if (user.getLockTime() != null) {
+                ps.setTimestamp(11, Timestamp.valueOf(user.getLockTime()));
+            } else {
+                ps.setNull(11, java.sql.Types.TIMESTAMP);
+            }
+            ps.setInt(12, user.getId());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Lỗi cập nhật người dùng", e);
@@ -411,6 +429,12 @@ public class UserDaoImpl extends BaseDao implements UserDao {
         User user = new User();
         user.setId(rs.getInt("id"));
         user.setEmail(rs.getString("email"));
+        if (hasColumn(rs, "username")) {
+            user.setUsername(rs.getString("username"));
+        }
+        if (hasColumn(rs, "phone")) {
+            user.setPhone(rs.getString("phone"));
+        }
         user.setPasswordHash(rs.getString("password_hash"));
         if (hasColumn(rs, "google_id")) {
             user.setGoogleId(rs.getString("google_id"));
@@ -418,6 +442,18 @@ public class UserDaoImpl extends BaseDao implements UserDao {
         user.setFullName(rs.getString("full_name"));
         user.setRole(rs.getString("role"));
         user.setActive(rs.getBoolean("active"));
+        if (hasColumn(rs, "status")) {
+            user.setStatus(rs.getString("status"));
+        }
+        if (hasColumn(rs, "failed_logins")) {
+            user.setFailedLogins(rs.getInt("failed_logins"));
+        }
+        if (hasColumn(rs, "lock_time")) {
+            Timestamp lt = rs.getTimestamp("lock_time");
+            if (lt != null) {
+                user.setLockTime(lt.toLocalDateTime());
+            }
+        }
         Timestamp createdAt = rs.getTimestamp("created_at");
         if (createdAt != null) {
             user.setCreatedAt(createdAt.toLocalDateTime());
@@ -439,5 +475,194 @@ public class UserDaoImpl extends BaseDao implements UserDao {
         User user = mapRow(rs);
         long orderCount = rs.getLong("order_count");
         return UserAdminRow.from(user, orderCount);
+    }
+
+    @Override
+    public Optional<User> findByEmailOrUsernameOrPhone(String input) {
+        if (input == null || input.isBlank()) {
+            return Optional.empty();
+        }
+        String sql = "SELECT * FROM users WHERE email = ? OR username = ? OR phone = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, input.trim());
+            ps.setString(2, input.trim());
+            ps.setString(3, input.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapRow(rs));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi tìm kiếm người dùng theo định danh đa năng", e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public void incrementFailedLogins(int userId) {
+        String sql = "UPDATE users SET failed_logins = failed_logins + 1 WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi tăng số lần đăng nhập sai", e);
+        }
+    }
+
+    @Override
+    public void resetFailedLogins(int userId) {
+        String sql = "UPDATE users SET failed_logins = 0, lock_time = NULL WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi reset số lần đăng nhập sai", e);
+        }
+    }
+
+    @Override
+    public void lockUser(int userId, LocalDateTime lockTime) {
+        String sql = "UPDATE users SET lock_time = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (lockTime != null) {
+                ps.setTimestamp(1, Timestamp.valueOf(lockTime));
+            } else {
+                ps.setNull(1, java.sql.Types.TIMESTAMP);
+            }
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi đặt khóa đăng nhập tạm thời", e);
+        }
+    }
+
+    @Override
+    public Optional<String> getOtpCode(int userId) {
+        String sql = "SELECT otp_code FROM otp_verifications WHERE user_id = ? AND expires_at > NOW()";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(rs.getString("otp_code"));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi truy vấn OTP", e);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public void saveOtpCode(int userId, String otpCode, LocalDateTime expiresAt) {
+        String sql = "INSERT INTO otp_verifications (user_id, otp_code, expires_at) VALUES (?, ?, ?) "
+                + "ON DUPLICATE KEY UPDATE otp_code = ?, expires_at = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setString(2, otpCode);
+            ps.setTimestamp(3, Timestamp.valueOf(expiresAt));
+            ps.setString(4, otpCode);
+            ps.setTimestamp(5, Timestamp.valueOf(expiresAt));
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi lưu OTP", e);
+        }
+    }
+
+    @Override
+    public void clearOtpCode(int userId) {
+        String sql = "DELETE FROM otp_verifications WHERE user_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi xóa OTP", e);
+        }
+    }
+
+    @Override
+    public void updateStatus(int userId, String status) {
+        String sql = "UPDATE users SET status = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi cập nhật trạng thái hoạt động", e);
+        }
+    }
+
+    @Override
+    public void logRoleUpdate(int userId, String newRole) {
+        String sql = "INSERT INTO user_role_updates (user_id, new_role, created_at) VALUES (?, ?, NOW())";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setString(2, newRole);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi lưu nhật ký cập nhật quyền", e);
+        }
+    }
+
+    @Override
+    public LocalDateTime getLastRoleUpdate(int userId) {
+        String sql = "SELECT MAX(created_at) FROM user_role_updates WHERE user_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Timestamp ts = rs.getTimestamp(1);
+                    if (ts != null) {
+                        return ts.toLocalDateTime();
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi truy vấn thời gian cập nhật quyền", e);
+        }
+        return null;
+    }
+
+    @Override
+    public boolean usernameExists(String username) {
+        if (username == null || username.isBlank()) {
+            return false;
+        }
+        String sql = "SELECT 1 FROM users WHERE username = ? LIMIT 1";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, username.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi kiểm tra username tồn tại", e);
+        }
+    }
+
+    @Override
+    public boolean phoneExists(String phone) {
+        if (phone == null || phone.isBlank()) {
+            return false;
+        }
+        String sql = "SELECT 1 FROM users WHERE phone = ? LIMIT 1";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, phone.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Lỗi kiểm tra số điện thoại tồn tại", e);
+        }
     }
 }

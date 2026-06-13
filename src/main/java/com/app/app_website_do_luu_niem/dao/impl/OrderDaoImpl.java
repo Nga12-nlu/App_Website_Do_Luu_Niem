@@ -99,7 +99,7 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
             if (hasPaymentCols) {
                 orderSql += ",?,?";
             }
-            orderSql += ",?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            orderSql += ",?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         } else if (hasPaymentCols) {
             orderSql = "INSERT INTO orders (user_id, total_amount, status, payment_method, vnpay_txn_ref, "
                     + "shipping_address, phone, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -414,14 +414,97 @@ public class OrderDaoImpl extends BaseDao implements OrderDao {
 
     @Override
     public void updateStatus(int id, String status) {
-        String sql = "UPDATE orders SET status = ? WHERE id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, status);
-            ps.setInt(2, id);
-            ps.executeUpdate();
+        String queryOld = "SELECT status, payment_method, paid_at FROM orders WHERE id = ?";
+        String updateSql = "UPDATE orders SET status = ? WHERE id = ?";
+        
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                String oldStatus = null;
+                String paymentMethod = null;
+                Timestamp paidAt = null;
+                try (PreparedStatement ps = conn.prepareStatement(queryOld)) {
+                    ps.setInt(1, id);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            oldStatus = rs.getString("status");
+                            paymentMethod = rs.getString("payment_method");
+                            paidAt = rs.getTimestamp("paid_at");
+                        }
+                    }
+                }
+                
+                if (oldStatus == null) {
+                    conn.rollback();
+                    return;
+                }
+                
+                // Cập nhật trạng thái
+                try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                    ps.setString(1, status);
+                    ps.setInt(2, id);
+                    ps.executeUpdate();
+                }
+                
+                // Nếu chuyển sang CANCELLED và trạng thái cũ khác CANCELLED
+                if ("CANCELLED".equalsIgnoreCase(status) && !"CANCELLED".equalsIgnoreCase(oldStatus)) {
+                    boolean wasDeducted = "COD".equalsIgnoreCase(paymentMethod) 
+                            || ("VNPAY".equalsIgnoreCase(paymentMethod) && (paidAt != null || "CONFIRMED".equalsIgnoreCase(oldStatus) || "SHIPPED".equalsIgnoreCase(oldStatus)));
+                    
+                    if (wasDeducted) {
+                        List<OrderItem> items = new ArrayList<>();
+                        String itemSql = "SELECT product_id, quantity, variant_id FROM order_items WHERE order_id = ?";
+                        try (PreparedStatement ps = conn.prepareStatement(itemSql)) {
+                            ps.setInt(1, id);
+                            try (ResultSet rs = ps.executeQuery()) {
+                                while (rs.next()) {
+                                    OrderItem item = new OrderItem();
+                                    Product p = new Product();
+                                    p.setId(rs.getInt("product_id"));
+                                    item.setProduct(p);
+                                    item.setQuantity(rs.getInt("quantity"));
+                                    int vid = rs.getInt("variant_id");
+                                    if (!rs.wasNull()) {
+                                        item.setVariantId(vid);
+                                    }
+                                    items.add(item);
+                                }
+                            }
+                        }
+                        restoreStockForItems(conn, items);
+                    }
+                }
+                
+                conn.commit();
+            } catch (Exception e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
         } catch (SQLException e) {
-            throw new RuntimeException("Lỗi cập nhật trạng thái đơn hàng", e);
+            throw new RuntimeException("Lỗi cập nhật trạng thái đơn hàng và khôi phục tồn kho", e);
+        }
+    }
+
+    private void restoreStockForItems(Connection conn, List<OrderItem> items) throws SQLException {
+        for (OrderItem item : items) {
+            if (item.getVariantId() != null) {
+                String sql = "UPDATE product_variants SET stock = stock + ? WHERE id = ?";
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setInt(1, item.getQuantity());
+                    ps.setInt(2, item.getVariantId());
+                    ps.executeUpdate();
+                }
+                syncProductAggregate(conn, item.getVariantId());
+            } else {
+                String sql = "UPDATE products SET stock = stock + ? WHERE id = ?";
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setInt(1, item.getQuantity());
+                    ps.setInt(2, item.getProduct().getId());
+                    ps.executeUpdate();
+                }
+            }
         }
     }
 

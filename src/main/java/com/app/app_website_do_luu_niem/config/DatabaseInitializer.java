@@ -73,6 +73,8 @@ public class DatabaseInitializer implements ServletContextListener {
             migrateVnpayIfNeeded(sce);
             migrateCheckoutEnhancementsIfNeeded(sce);
             migrateStaticContentsIfNeeded(sce);
+            migrateSessionAndPermissionsIfNeeded(sce);
+            migrateInventoryTransactionsIfNeeded(sce);
         } catch (Exception e) {
             sce.getServletContext().log("Không thể khởi tạo database: " + e.getMessage(), e);
         }
@@ -344,6 +346,129 @@ public class DatabaseInitializer implements ServletContextListener {
                     }
                 }
             }
+        }
+    }
+
+    private void migrateSessionAndPermissionsIfNeeded(ServletContextEvent sce) throws Exception {
+        if (!tableExists("users")) {
+            return;
+        }
+        try (Connection conn = DBConnection.getConnection();
+             Statement st = conn.createStatement()) {
+            if (!columnExists(conn, "users", "username")) {
+                st.execute("ALTER TABLE users ADD COLUMN username VARCHAR(100) NULL");
+                try {
+                    st.execute("ALTER TABLE users ADD UNIQUE INDEX idx_users_username (username)");
+                } catch (Exception ignored) {}
+                sce.getServletContext().log("Đã thêm cột users.username.");
+            }
+            if (!columnExists(conn, "users", "phone")) {
+                st.execute("ALTER TABLE users ADD COLUMN phone VARCHAR(20) NULL");
+                try {
+                    st.execute("ALTER TABLE users ADD UNIQUE INDEX idx_users_phone (phone)");
+                } catch (Exception ignored) {}
+                sce.getServletContext().log("Đã thêm cột users.phone.");
+            }
+            if (!columnExists(conn, "users", "status")) {
+                st.execute("ALTER TABLE users ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'");
+                sce.getServletContext().log("Đã thêm cột users.status.");
+            }
+            if (!columnExists(conn, "users", "failed_logins")) {
+                st.execute("ALTER TABLE users ADD COLUMN failed_logins INT NOT NULL DEFAULT 0");
+                sce.getServletContext().log("Đã thêm cột users.failed_logins.");
+            }
+            if (!columnExists(conn, "users", "lock_time")) {
+                st.execute("ALTER TABLE users ADD COLUMN lock_time DATETIME NULL");
+                sce.getServletContext().log("Đã thêm cột users.lock_time.");
+            }
+
+            // Tạo bảng otp_verifications
+            if (!tableExists("otp_verifications")) {
+                st.execute("""
+                        CREATE TABLE IF NOT EXISTS otp_verifications (
+                            user_id INT PRIMARY KEY,
+                            otp_code VARCHAR(6) NOT NULL,
+                            expires_at DATETIME NOT NULL,
+                            CONSTRAINT fk_otp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                        """);
+                sce.getServletContext().log("Đã tạo bảng otp_verifications.");
+            }
+
+            // Tạo bảng user_role_updates
+            if (!tableExists("user_role_updates")) {
+                st.execute("""
+                        CREATE TABLE IF NOT EXISTS user_role_updates (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            user_id INT NOT NULL,
+                            new_role VARCHAR(50) NOT NULL,
+                            created_at DATETIME NOT NULL,
+                            CONSTRAINT fk_role_update_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                        """);
+                sce.getServletContext().log("Đã tạo bảng user_role_updates.");
+            }
+
+            // Tạo bảng system_logs
+            if (!tableExists("system_logs")) {
+                st.execute("""
+                        CREATE TABLE IF NOT EXISTS system_logs (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            user_id INT NOT NULL,
+                            action VARCHAR(100) NOT NULL,
+                            target VARCHAR(100) NOT NULL,
+                            details TEXT,
+                            ip_address VARCHAR(45),
+                            created_at DATETIME NOT NULL,
+                            CONSTRAINT fk_sys_log_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                        """);
+                sce.getServletContext().log("Đã tạo bảng system_logs.");
+            }
+
+            // Đánh index cho products(name) và orders(status), orders(created_at)
+            try {
+                st.execute("CREATE INDEX idx_products_name ON products (name)");
+            } catch (Exception ignored) {}
+            try {
+                st.execute("CREATE INDEX idx_orders_status ON orders (status)");
+            } catch (Exception ignored) {}
+            try {
+                st.execute("CREATE INDEX idx_orders_created_at ON orders (created_at)");
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void migrateInventoryTransactionsIfNeeded(ServletContextEvent sce) throws Exception {
+        if (!tableExists("products")) {
+            return;
+        }
+        try (Connection conn = DBConnection.getConnection();
+             Statement st = conn.createStatement()) {
+            if (!tableExists("inventory_transactions")) {
+                st.execute("""
+                        CREATE TABLE IF NOT EXISTS inventory_transactions (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            product_id INT NOT NULL,
+                            variant_id INT NULL,
+                            type VARCHAR(20) NOT NULL,
+                            quantity INT NOT NULL,
+                            note VARCHAR(255) NULL,
+                            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                            user_id INT NOT NULL,
+                            CONSTRAINT fk_inv_txn_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+                            CONSTRAINT fk_inv_txn_variant FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL,
+                            CONSTRAINT fk_inv_txn_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        )
+                        """);
+                sce.getServletContext().log("Đã tạo bảng inventory_transactions.");
+            }
+            try {
+                st.execute("CREATE INDEX idx_inv_txn_type ON inventory_transactions (type)");
+            } catch (Exception ignored) {}
+            try {
+                st.execute("CREATE INDEX idx_inv_txn_created_at ON inventory_transactions (created_at)");
+            } catch (Exception ignored) {}
         }
     }
 

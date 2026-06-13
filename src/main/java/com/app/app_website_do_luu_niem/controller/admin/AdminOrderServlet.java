@@ -19,7 +19,7 @@ public class AdminOrderServlet extends HttpServlet {
     private final OrderDao orderDao = new OrderDaoImpl();
 
     private static final java.util.Set<String> ALLOWED_STATUSES = java.util.Set.of(
-            "PENDING", "CONFIRMED", "SHIPPED", "CANCELLED");
+            "PENDING", "PACKAGING", "AWAITING_SHIPPING", "SHIPPING", "SHIPPED", "CANCELLED");
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -111,7 +111,8 @@ public class AdminOrderServlet extends HttpServlet {
             try {
                 int id = Integer.parseInt(idParam);
                 orderDao.updateStatus(id, status.toUpperCase());
-                // Redirect về order detail để xem kết quả
+                com.app.app_website_do_luu_niem.util.SystemLogHelper.log(req, "UPDATE_ORDER_STATUS", "ORDER", 
+                        "Cập nhật trạng thái đơn hàng #" + id + " thành " + status.toUpperCase());
                 resp.sendRedirect(req.getContextPath() + "/admin/orders?action=detail&id=" + id);
                 return;
             } catch (NumberFormatException ignored) {

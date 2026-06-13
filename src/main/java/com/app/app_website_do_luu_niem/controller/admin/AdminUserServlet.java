@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.mindrot.jbcrypt.BCrypt;
+import com.app.app_website_do_luu_niem.util.SystemLogHelper;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -211,9 +212,17 @@ public class AdminUserServlet extends HttpServlet {
 
         if (isCreate) {
             userDao.save(user);
+            SystemLogHelper.log(req, "CREATE_USER", "USER", "Đã tạo tài khoản mới: email=" + user.getEmail() + ", vai trò=" + user.getRole());
             redirectWithMsg(req, resp, "created");
         } else {
+            String oldRole = user.getRole();
             userDao.update(user);
+            if (!oldRole.equalsIgnoreCase(user.getRole())) {
+                userDao.logRoleUpdate(user.getId(), user.getRole());
+                SystemLogHelper.log(req, "CHANGE_ROLE", "USER", "Thay đổi vai trò user id=" + user.getId() + ": " + oldRole + " -> " + user.getRole());
+            } else {
+                SystemLogHelper.log(req, "UPDATE_USER", "USER", "Cập nhật thông tin user id=" + user.getId() + ", email=" + user.getEmail());
+            }
             redirectWithMsg(req, resp, "updated");
         }
     }
@@ -232,6 +241,7 @@ public class AdminUserServlet extends HttpServlet {
                 return;
             }
             userDao.updatePasswordHash(id, BCrypt.hashpw(password, BCrypt.gensalt()));
+            SystemLogHelper.log(req, "RESET_PASSWORD", "USER", "Đặt lại mật khẩu cho user id=" + id);
             resp.sendRedirect(req.getContextPath() + "/admin/users?action=detail&id=" + id + "&msg=pwdreset");
         } catch (NumberFormatException e) {
             redirectWithMsg(req, resp, "error");
@@ -263,6 +273,7 @@ public class AdminUserServlet extends HttpServlet {
             }
             user.setActive(!user.isActive());
             userDao.update(user);
+            SystemLogHelper.log(req, user.isActive() ? "ACTIVATE_USER" : "BLOCK_USER", "USER", "Thay đổi trạng thái hoạt động user id=" + id + " thành " + user.isActive());
             redirectWithMsg(req, resp, user.isActive() ? "activated" : "locked");
         } catch (NumberFormatException e) {
             redirectWithMsg(req, resp, "error");
@@ -297,6 +308,7 @@ public class AdminUserServlet extends HttpServlet {
                 return;
             }
             userDao.delete(id);
+            SystemLogHelper.log(req, "DELETE_USER", "USER", "Xóa user id=" + id + ", email=" + user.getEmail());
             redirectWithMsg(req, resp, "deleted");
         } catch (NumberFormatException e) {
             redirectWithMsg(req, resp, "error");

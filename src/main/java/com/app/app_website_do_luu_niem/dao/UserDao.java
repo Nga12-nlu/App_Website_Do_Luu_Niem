@@ -48,4 +48,28 @@ public interface UserDao {
     void delete(int id);
 
     long countActiveCustomers();
+
+    Optional<User> findByEmailOrUsernameOrPhone(String input);
+
+    void incrementFailedLogins(int userId);
+
+    void resetFailedLogins(int userId);
+
+    void lockUser(int userId, java.time.LocalDateTime lockTime);
+
+    Optional<String> getOtpCode(int userId);
+
+    void saveOtpCode(int userId, String otpCode, java.time.LocalDateTime expiresAt);
+
+    void clearOtpCode(int userId);
+
+    void updateStatus(int userId, String status);
+
+    void logRoleUpdate(int userId, String newRole);
+
+    java.time.LocalDateTime getLastRoleUpdate(int userId);
+    
+    boolean usernameExists(String username);
+    
+    boolean phoneExists(String phone);
 }

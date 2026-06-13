@@ -19,7 +19,10 @@ public class LoginServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if ("1".equals(req.getParameter("reset"))) {
+        String msg = req.getParameter("msg");
+        if ("role_changed".equals(msg)) {
+            req.setAttribute("message", "Quyền hạn của bạn đã được thay đổi. Vui lòng đăng nhập lại.");
+        } else if ("1".equals(req.getParameter("reset"))) {
             req.setAttribute("message", "Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới.");
         }
         req.setAttribute("googleEnabled", AppConfig.isGoogleOAuthEnabled());
@@ -29,42 +32,41 @@ public class LoginServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String email = req.getParameter("email");
+        String email = req.getParameter("email"); // This can be email, username, or phone
         String password = req.getParameter("password");
         String redirect = req.getParameter("redirect");
 
         try {
-            if (email == null || email.isBlank() || password == null || password.isBlank()) {
-                forwardLoginError(req, resp, email, "Vui lòng nhập email và mật khẩu.");
+            AuthService.LoginResult result = authService.login(email, password);
+            
+            if (result.getError() == null) {
+                AuthRedirectHelper.completeLogin(req, resp, result.getUser(), redirect);
                 return;
             }
 
-            Optional<User> existing = authService.findByEmailNormalized(email);
-            if (existing.isPresent()) {
-                User found = existing.get();
-                if (!found.isActive()) {
-                    forwardLoginError(req, resp, email, "Tài khoản đã bị khóa. Vui lòng liên hệ hỗ trợ.");
-                    return;
+            String msg = switch (result.getError()) {
+                case "invalid_input" -> "Vui lòng nhập tài khoản và mật khẩu.";
+                case "not_found" -> "Tài khoản không tồn tại trên hệ thống.";
+                case "locked" -> "Tài khoản của bạn đã bị khóa đăng nhập tạm thời. Vui lòng thử lại sau " 
+                        + result.getRemainingLockMinutes() + " phút.";
+                case "banned" -> "Tài khoản của bạn đã bị khóa vĩnh viễn do vi phạm điều khoản.";
+                case "unverified" -> {
+                    // Redirect to OTP verification page
+                    resp.sendRedirect(req.getContextPath() + "/verify-otp?userId=" + result.getUser().getId() + 
+                            "&email=" + java.net.URLEncoder.encode(result.getUser().getEmail(), java.nio.charset.StandardCharsets.UTF_8) +
+                            "&msg=unverified");
+                    yield null; // Return from doPost after sendRedirect
                 }
-                if (!found.hasLocalPassword()) {
-                    forwardLoginError(req, resp, email,
-                            "Email này đăng ký bằng Google. Vui lòng chọn \"Đăng nhập với Google\".");
-                    return;
-                }
-            }
+                case "no_local_password" -> "Tài khoản này đăng ký bằng Google. Vui lòng nhấn nút \"Đăng nhập bằng Google\".";
+                default -> "Tài khoản hoặc mật khẩu không chính xác.";
+            };
 
-            Optional<User> userOpt = authService.login(email, password);
-            if (userOpt.isPresent()) {
-                AuthRedirectHelper.completeLogin(req, resp, userOpt.get(), redirect);
-                return;
+            if (msg != null) {
+                forwardLoginError(req, resp, email, msg);
             }
-
-            forwardLoginError(req, resp, email,
-                    "Email hoặc mật khẩu không đúng. Nếu chưa có tài khoản, hãy đăng ký.");
         } catch (RuntimeException ex) {
             req.getServletContext().log("Login failed: " + ex.getMessage(), ex);
-            forwardLoginError(req, resp, email,
-                    "Không thể đăng nhập lúc này. Vui lòng thử lại sau.");
+            forwardLoginError(req, resp, email, "Không thể đăng nhập lúc này. Vui lòng thử lại sau.");
         }
     }
 

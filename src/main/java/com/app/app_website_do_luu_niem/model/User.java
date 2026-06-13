@@ -5,11 +5,16 @@ import java.time.LocalDateTime;
 public class User {
     private int id;
     private String email;
+    private String username;
+    private String phone;
     private String passwordHash;
     private String googleId;
     private String fullName;
     private String role; // ADMIN, CUSTOMER
     private boolean active;
+    private String status; // UNVERIFIED, ACTIVE, BANNED
+    private int failedLogins;
+    private LocalDateTime lockTime;
     private LocalDateTime createdAt;
 
     public int getId() {
@@ -26,6 +31,22 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public String getPasswordHash() {
@@ -70,6 +91,30 @@ public class User {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public String getStatus() {
+        return status != null ? status : "ACTIVE";
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public int getFailedLogins() {
+        return failedLogins;
+    }
+
+    public void setFailedLogins(int failedLogins) {
+        this.failedLogins = failedLogins;
+    }
+
+    public LocalDateTime getLockTime() {
+        return lockTime;
+    }
+
+    public void setLockTime(LocalDateTime lockTime) {
+        this.lockTime = lockTime;
     }
 
     public LocalDateTime getCreatedAt() {
