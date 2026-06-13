@@ -36,7 +36,11 @@ public class GhnShippingService {
         body.addProperty("length", 15);
         body.addProperty("width", 15);
         body.addProperty("height", 15);
-        body.addProperty("insurance_value", insuranceValue != null ? insuranceValue.intValue() : 0);
+        int insVal = insuranceValue != null ? insuranceValue.intValue() : 0;
+        if (insVal > 20000000) {
+            insVal = 20000000;
+        }
+        body.addProperty("insurance_value", insVal);
         body.addProperty("cod_failed_amount", 0);
 
         String jsonBody = body.toString();
