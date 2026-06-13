@@ -79,8 +79,8 @@ public class AuthService {
             return result;
         }
 
-        // Check if Banned
-        if ("BANNED".equalsIgnoreCase(user.getStatus())) {
+        // Check if Banned or Inactive
+        if ("BANNED".equalsIgnoreCase(user.getStatus()) || !user.isActive()) {
             result.error = "banned";
             return result;
         }

@@ -1,0 +1,99 @@
+﻿STT,Tên chức năng,Phân loại,Trạng thái,Mô tả vấn đề,Mong đợi (đã format)
+1,Đăng nhập bằng email,Người dùng,Cần chỉnh sửa,"Đã có login cơ bản nhưng chưa lọc active = 0, chưa tự động khóa phiên khi không hoạt động và chưa có khóa tạm thời khi nhập sai mật khẩu.","• Nhập email và mật khẩu. Lọc tài khoản bị khóa (active = 0).
+• Khóa đăng nhập tạm thời từ 15-30 phút nếu nhập sai mật khẩu quá 5-10 lần liên tiếp (chống tấn công dò mật khẩu).
+• Tự động điều hướng về trang đích trước đó nếu có tham số redirect.
+• Phiên đăng nhập tự hết hạn sau 30 phút không hoạt động."
+2,Đăng nhập bằng Google,Người dùng,Cần chỉnh sửa,Chưa tích hợp OAuth2 Google hoàn chỉnh hoặc thiếu đồng bộ ảnh đại diện do DB thiếu trường lưu trữ.,"• Chuyển hướng đến trang xác thực OAuth2 của Google.
+• Xác thực thành công trong < 5 giây.
+• Tự động tạo hoặc liên kết tài khoản nếu email trùng khớp.
+• Đồng bộ tên và ảnh đại diện từ Google."
+3,Đăng ký tài khoản mới & Xác thực OTP,Người dùng,Cần chỉnh sửa,Đăng ký xong tự động kích hoạt trực tiếp trong DB mà không gửi email xác nhận. Chưa sử dụng giải thuật băm mật khẩu MD5.,"• Nhập thông tin đăng ký (Họ tên, Email, Mật khẩu).
+• Bắt buộc băm mật khẩu bằng giải thuật MD5 trước khi lưu trữ vào DB.
+• Gửi email chứa mã OTP kích hoạt tài khoản trong vòng 60 giây.
+• Mã/Link xác nhận gửi qua email có hiệu lực trong vòng 24 giờ.
+• Sau khi xác nhận -> tự động kích hoạt và đăng nhập.
+• Phân biệt tài khoản chưa xác thực (không cho đăng nhập) và tài khoản bị Admin khóa do vi phạm (cấm đăng ký mới bằng email cũ này)."
+4,Đổi mật khẩu,Người dùng,Cần chỉnh sửa,Đã có đổi mật khẩu nhưng chưa gửi email thông báo khi thay đổi thành công để bảo mật tài khoản.,"• Yêu cầu nhập mật khẩu cũ. Mật khẩu mới và xác nhận mật khẩu mới.
+• Kiểm tra mật khẩu mới trùng khớp xác nhận và thỏa mãn độ mạnh.
+• Gửi email cảnh báo bảo mật ngay sau khi đổi mật khẩu thành công."
+5,Quản lý mật khẩu mạnh,Người dùng,Cần chỉnh sửa,Chỉ kiểm tra độ mạnh ở backend. Chưa có thanh đánh giá và cảnh báo mật khẩu trực quan ở frontend.,"• Hiển thị thanh đo độ mạnh mật khẩu trực quan khi người dùng nhập.
+• Yêu cầu bắt buộc 8-128 ký tự. Gồm ít nhất một chữ hoa, chữ thường và chữ số."
+6,Quên mật khẩu & Gửi OTP,Người dùng,Cần chỉnh sửa,Đã có tính năng tạo link reset nhưng chưa gửi mã OTP xác nhận qua Email.,"• Gửi mã OTP gồm 6 chữ số qua email của người dùng trong vòng 60 giây.
+• Mã OTP có hiệu lực trong vòng 15 phút và chỉ sử dụng được 1 lần duy nhất."
+7,Đặt lại mật khẩu qua OTP/Token,Người dùng,Cần chỉnh sửa,Yêu cầu đặt lại mật khẩu chưa giới hạn số lần yêu cầu gây tràn tài nguyên gửi mail.,"• Nhập mã OTP và mật khẩu mới để đặt lại.
+• Mã/Link reset hoạt động một lần duy nhất. Hết hạn sau 1 tiếng.
+• Giới hạn tối đa 5 yêu cầu quên mật khẩu trong vòng 1 giờ cho mỗi địa chỉ IP/User."
+8,Xóa tài khoản,Người dùng,Thêm mới,Hệ thống chưa có chức năng xóa tài khoản của người dùng trên giao diện.,"• Xác nhận bước 1: Hiển thị hộp thoại cảnh báo ""Bạn có chắc chắn muốn xóa?"".
+• Xác nhận bước 2: Gửi mã OTP xác nhận qua email để xác minh chính chủ.
+• Tài khoản sẽ bị khóa ngay lập tức và xóa vĩnh viễn dữ liệu sau 7 ngày.
+• Trong 7 ngày đó, nếu đăng nhập lại thì sẽ tự động hủy yêu cầu xóa."
+9,Đăng xuất xác nhận,Người dùng,Cần chỉnh sửa,Bấm đăng xuất là thoát luôn khỏi hệ thống mà không hỏi lại xác nhận từ người dùng.,"• Hiển thị hộp thoại xác nhận ""Bạn có chắc chắn muốn đăng xuất?"".
+• Cung cấp 2 lựa chọn: ""Đăng xuất"" và ""Hủy"".
+• Xác nhận -> xóa toàn bộ session, Token, và chuyển hướng về trang đăng nhập."
+10,Cập nhật thông tin cá nhân & Avatar,Người dùng,Cần chỉnh sửa,Mới chỉ cập nhật được họ tên và email. Chưa cho phép người dùng tải lên ảnh đại diện (avatar).,"• Xem và chỉnh sửa họ tên, số điện thoại, email.
+• Cho phép upload ảnh đại diện mới (lưu trữ cục bộ hoặc đám mây) và hiển thị trực quan trên thanh header.
+• Kiểm tra không trùng email/SĐT với tài khoản khác khi cập nhật."
+11,Xem danh sách sản phẩm,Người dùng,Cần chỉnh sửa,"Chưa có tính năng lọc sản phẩm theo khoảng giá, thương hiệu, hoặc đánh giá của khách hàng.","• Hiển thị lưới sản phẩm kèm ảnh, tên, giá bán và đánh giá sao.
+• Hỗ trợ bộ lọc sản phẩm theo khoảng giá linh hoạt (dưới 100k, 100k-500k, trên 500k).
+• Hỗ trợ sắp xếp sản phẩm theo giá tăng/giảm dần, mới nhất, bán chạy nhất."
+12,Tìm kiếm sản phẩm,Người dùng,Cần chỉnh sửa,Tìm kiếm cơ bản theo từ khóa thô. Chưa hỗ trợ gợi ý từ khóa thông minh khi người dùng đang nhập.,"• Hiển thị các sản phẩm gợi ý tự động (Autocomplete) ngay khi người dùng nhập từ khóa (sau 300ms).
+• Tìm kiếm thông minh hỗ trợ tìm đúng ngay cả khi viết thiếu dấu hoặc sai chính tả nhẹ."
+13,Chi tiết sản phẩm & Biến thể,Người dùng,Cần chỉnh sửa,"Giao diện chọn biến thể (size, màu sắc) còn đơn giản. Chưa đổi ảnh hiển thị tương ứng theo biến thể.","• Hiển thị các biến thể dưới dạng nút bấm trực quan (Size, Màu sắc).
+• Tự động cập nhật giá bán và tồn kho tương ứng của biến thể khi được click.
+• Thay đổi ảnh sản phẩm chính theo ảnh của biến thể được chọn."
+14,Thêm sản phẩm vào giỏ hàng,Người dùng,Cần chỉnh sửa,Thêm sản phẩm vào giỏ hàng làm reload lại toàn bộ trang.,"• Thêm sản phẩm và biến thể vào giỏ hàng bằng AJAX không load lại trang.
+• Hiển thị thông báo nhỏ (Toast) góc màn hình thông báo thêm thành công.
+• Cập nhật số lượng hiển thị trên icon giỏ hàng ở header ngay lập tức."
+15,Quản lý giỏ hàng (Session/Cookie),Người dùng,Cần chỉnh sửa,Chưa tự động cập nhật tổng tiền bằng AJAX. Chưa lưu thuần bằng Session/Cookie.,"• Giữ nguyên giỏ hàng không cần lưu trong Database (lưu thông qua session hoặc cookie).
+• Cho phép tăng/giảm số lượng sản phẩm bằng nút bấm cộng/trừ.
+• Tự động cập nhật lại tổng tiền giỏ hàng bằng AJAX.
+• Kiểm tra tồn kho tối đa của sản phẩm/biến thể và cảnh báo nếu vượt quá."
+16,Xóa sản phẩm khỏi giỏ hàng,Người dùng,Cần chỉnh sửa,Bấm xóa sản phẩm khỏi giỏ hàng làm tải lại toàn bộ trang giỏ hàng.,"• Cho phép người dùng nhấn biểu tượng ""Thùng rác"" để xóa nhanh sản phẩm khỏi giỏ hàng bằng AJAX.
+• Hiển thị hộp thoại xác nhận nhỏ ""Bạn có chắc muốn xóa sản phẩm này?""."
+17,Thanh toán COD & Tích hợp vận chuyển,Người dùng,Cần chỉnh sửa,"Đặt hàng thành công chỉ báo trên web. Chưa lưu đầy đủ thông tin người nhận thực tế, phí vận chuyển và mã giảm giá khi tạo đơn hàng.","• Cho phép người dùng nhập Họ tên, Địa chỉ giao hàng và Số điện thoại thực tế của người nhận.
+• Tự động tính phí vận chuyển dựa trên khoảng cách từ cửa hàng đến địa chỉ giao hàng (hoặc qua API GHN).
+• Cho phép nhập mã giảm giá (voucher) để tự động trừ tiền đơn hàng.
+• Tạo đơn hàng thành công ở trạng thái PENDING.
+• Tự động gửi email xác nhận đơn hàng kèm hóa đơn chi tiết cho khách."
+18,Thanh toán trực tuyến,Người dùng,Thêm mới,Hệ thống chưa tích hợp bất kỳ cổng thanh toán trực tuyến hoặc mã QR chuyển khoản nào.,"• Tích hợp cổng thanh toán online VNPay hoặc tạo mã QR VietQR chuyển khoản tự động.
+• Tự động cập nhật đơn hàng sang trạng thái PAID (Đã thanh toán) sau khi giao dịch thành công."
+19,Quản lý và áp dụng mã giảm giá (Voucher),Người dùng / Admin,Thêm mới,Hệ thống chưa có tính năng khuyến mãi hoặc mã giảm giá để kích thích mua sắm.,"• Admin tạo, chỉnh sửa, xóa mã giảm giá (phần trăm hoặc số tiền cố định, giá trị đơn hàng tối thiểu, giới hạn lượt dùng, thời gian hiệu lực).
+• Khách hàng có thể nhập mã giảm giá ở trang giỏ hàng/thanh toán và tự động tính lại tổng tiền đơn hàng."
+20,Xem lịch sử đơn hàng & Trạng thái,Người dùng,Cần chỉnh sửa,"Người dùng mới chỉ xem được đơn hàng thô sơ, chưa lọc đơn theo trạng thái và chưa theo dõi được tiến trình đơn hàng.","• Phân chia đơn hàng theo các tab trạng thái: Tất cả, Chờ xử lý, Đang giao, Đã giao, Đã hủy.
+• Tiến trình đơn hàng hiển thị chuẩn: Đã tiếp nhận -> Đang đóng gói -> Đang chờ giao đơn vị vận chuyển -> Đang giao."
+21,Xem chi tiết đơn hàng & Timeline,Người dùng,Cần chỉnh sửa,Chi tiết đơn hàng hiển thị chung trong trang lịch sử. Chưa tách biệt trang chi tiết hóa đơn chuyên nghiệp.,"• Hiển thị chi tiết từng món hàng, đơn giá, biến thể, phí vận chuyển, mã giảm giá và tổng thanh toán.
+• Hiển thị timeline xử lý đơn hàng (Thời gian đặt, Thời gian xác nhận, Thời gian giao)."
+22,Hủy đơn hàng,Người dùng,Cần chỉnh sửa,Khách hàng chưa thể tự hủy đơn hàng kể cả khi đơn hàng chưa được admin xác nhận (PENDING).,"• Cho phép khách hàng nhấn ""Hủy đơn"" kèm lý do hủy nếu trạng thái đơn là PENDING.
+• Gửi email thông báo cho Admin về việc đơn hàng bị khách hủy."
+23,Dashboard thống kê & Hàng tồn/Hao hụt,Admin,Cần chỉnh sửa,Mới hiển thị thống kê dạng text số lượng đơn giản. Chưa có biểu đồ doanh số trực quan và thống kê hàng tồn/hao hụt.,"• Hiển thị biểu đồ cột/đường về doanh thu theo ngày/tuần/tháng bằng Chart.js.
+• Thống kê danh sách sản phẩm bán chạy nhất.
+• Bắt buộc thống kê các sản phẩm không bán được (hàng tồn kho/ngâm vốn lâu ngày).
+• Thống kê nguyên liệu/hàng hóa bị tiêu hủy, hao hụt do hư hỏng."
+24,Quản lý danh mục,Admin,Cần chỉnh sửa,Cho phép xóa danh mục ngay cả khi đang có sản phẩm thuộc danh mục đó gây lỗi khóa ngoại SQL.,"• Liệt kê, thêm mới, chỉnh sửa thông tin danh mục.
+• Kiểm tra sản phẩm trước khi xóa danh mục. Cảnh báo yêu cầu chuyển sản phẩm trước khi xóa."
+25,Quản lý sản phẩm & Nhập/Xuất Excel,Admin,Cần chỉnh sửa,Chưa hỗ trợ nhập sản phẩm hàng loạt từ Excel hoặc xuất danh sách sản phẩm ra Excel.,"• Cho phép xuất danh sách sản phẩm trong kho ra file Excel.
+• Cho phép nhập nhanh danh sách sản phẩm bằng file Excel mẫu.
+• Quản lý số lượng tồn kho (Nhập, Xuất, Hao hụt do hư hỏng)."
+26,Quản lý biến thể sản phẩm,Admin,Cần chỉnh sửa,Giao diện quản lý biến thể còn phức tạp. Chưa cho phép chỉnh sửa nhanh tồn kho/giá ngoài danh sách.,"• Nhập liệu sản phẩm và danh sách biến thể tương ứng dạng bảng động (Dynamic table).
+• Cho phép sửa nhanh số lượng tồn kho trực tiếp trên trang danh sách sản phẩm."
+27,Upload và quản lý ảnh sản phẩm,Admin,Cần chỉnh sửa,Ảnh sản phẩm mã hóa Base64 lưu trực tiếp trong DB làm phình to dung lượng cơ sở dữ liệu.,"• Hỗ trợ upload file ảnh lưu vào thư mục máy chủ (local storage) hoặc cloud storage (Cloudinary).
+• Tự động nén ảnh tối ưu dung lượng trước khi lưu để tăng tốc độ tải trang."
+28,Quản lý đơn hàng & In hóa đơn PDF,Admin,Cần chỉnh sửa,Trạng thái cập nhật thủ công. Chưa hỗ trợ in hóa đơn xuất kho PDF cho admin.,"• Xem danh sách đơn hàng chi tiết. Cập nhật trạng thái xử lý đơn hàng (Đã tiếp nhận -> Đang đóng gói -> Đang chờ giao đơn vị vận chuyển -> Đang giao).
+• Hỗ trợ nút ""In hóa đơn"" để xuất file PDF chuẩn khổ giấy in nhiệt/A4 cho nhân viên kho.
+• Tích hợp API của Giao Hàng Nhanh (GHN) để đồng bộ thông tin đơn hàng và giao vận."
+29,Thông báo trạng thái đơn hàng,Admin,Cần chỉnh sửa,"Khi cập nhật trạng thái đơn hàng, khách hàng không nhận được thông báo gì.",• Tự động gửi email thông báo cho khách hàng khi trạng thái đơn hàng thay đổi (ví dụ: CONFIRMED hoặc SHIPPED).
+30,Quản lý thành viên,Admin,Cần chỉnh sửa,Chỉ có thể toggle khóa/kích hoạt. Chưa cho phép Admin tạo tài khoản nhân viên hoặc phân quyền trực tiếp.,"• Xem danh sách thành viên. Toggle kích hoạt/khóa tài khoản thành viên.
+• Cho phép tạo tài khoản mới và gán vai trò hệ thống (ADMIN, EMPLOYEE, CUSTOMER)."
+31,Phân quyền nhân viên (EMPLOYEE),Admin,Thêm mới,Phân quyền đơn giản giữa ADMIN và CUSTOMER. Chưa có vai trò nhân viên bán hàng (EMPLOYEE) giới hạn quyền.,"• Thêm vai trò EMPLOYEE chỉ được quản lý đơn hàng và sản phẩm. Không được xem dashboard doanh thu hoặc xóa sản phẩm/danh mục.
+• Sử dụng một trường định danh level/group trong bảng User để phân chia các quyền (Cấp độ phân quyền 1)."
+32,Cơ chế cưỡng chế đăng xuất (Force Logout),Hệ thống,Thêm mới,"Khi Admin thay đổi vai trò (thăng/hạ cấp quyền), người dùng vẫn duy trì quyền cũ trong phiên làm việc hiện tại.","• Xây dựng cơ chế lưu thông tin thay đổi vào một bảng trung gian.
+• Tự động ép buộc tài khoản người dùng logout để cập nhật quyền mới ngay khi họ tải lại trang.
+• Tài khoản đăng nhập trên nhiều trình duyệt chỉ bị logout 1 lần duy nhất (giải pháp nâng cao)."
+33,Bộ lọc phân quyền,Hệ thống,Cần chỉnh sửa,Cấu hình đường dẫn bảo vệ tĩnh trong code. Chưa linh hoạt.,"• Bảo vệ toàn bộ URL '/admin/*' và các URL thanh toán/cá nhân của khách hàng.
+• Tự động chuyển hướng về trang đăng nhập và lưu lại trang yêu cầu trước đó để redirect sau khi đăng nhập thành công."
+34,Lưu nhật ký hệ thống (System Audit Logs),Hệ thống,Thêm mới,Thiếu ghi vết các hành động chỉnh sửa nhạy cảm của tài khoản Admin và Nhân viên (Employee) để bảo mật.,"• Tự động ghi nhận thông tin nhật ký hành động: Ai, làm gì (thay đổi giá, duyệt đơn, xóa danh mục, đổi vai trò thành viên), lúc nào, từ IP nào, dữ liệu trước/sau thay đổi ra sao."
+35,Tự động đồng bộ tồn kho,Hệ thống,Đã hoàn thành,Số lượng tồn kho và giá bán sản phẩm chính phải khớp với tổng số lượng và giá nhỏ nhất của các biến thể.,• DatabaseInitializer tự động chạy câu lệnh UPDATE đồng bộ giá bán nhỏ nhất và tổng tồn kho từ bảng product_variants sang bảng products khi khởi chạy hệ thống.
+36,Tính phí giao hàng tự động theo khoảng cách,Hệ thống,Đã hoàn thành,Đã hoàn thành cơ chế tự động tính phí vận chuyển theo khoảng cách địa lý.,"• Tự động tính phí vận chuyển dựa trên khoảng cách từ cửa hàng đến địa chỉ giao hàng.
+• Tự động miễn phí vận chuyển đối với các đơn hàng đạt giá trị tối thiểu (ví dụ: đơn hàng trên 500k)."
+37,Tối ưu hóa chỉ mục Cơ sở dữ liệu (Database Indexing),Hệ thống,Thêm mới,Chưa tối ưu hóa tốc độ truy vấn đối với dữ liệu lớn.,"• Áp dụng kỹ thuật đánh index cho các cột hay tìm kiếm hoặc các cột NOT NULL nhằm tối ưu tốc độ truy vấn dữ liệu lớn.
+• Tránh đánh index cho các bảng thường xuyên cập nhật/thêm mới dữ liệu."
