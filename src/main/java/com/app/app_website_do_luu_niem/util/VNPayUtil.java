@@ -35,6 +35,13 @@ public final class VNPayUtil {
         }
     }
 
+    private static String encode(String val) {
+        if (val == null) {
+            return "";
+        }
+        return URLEncoder.encode(val, StandardCharsets.UTF_8);
+    }
+
     public static String hashAllFields(Map<String, String> fields, String secretKey) {
         List<String> names = new ArrayList<>(fields.keySet());
         Collections.sort(names);
@@ -44,9 +51,9 @@ public final class VNPayUtil {
             if (value == null || value.isEmpty()) {
                 continue;
             }
-            sb.append(URLEncoder.encode(name, StandardCharsets.UTF_8));
+            sb.append(name);
             sb.append('=');
-            sb.append(URLEncoder.encode(value, StandardCharsets.UTF_8));
+            sb.append(encode(value));
             sb.append('&');
         }
         if (!sb.isEmpty()) {
@@ -92,9 +99,9 @@ public final class VNPayUtil {
             if (value == null || value.isEmpty()) {
                 continue;
             }
-            sb.append(URLEncoder.encode(name, StandardCharsets.UTF_8));
+            sb.append(name);
             sb.append('=');
-            sb.append(URLEncoder.encode(value, StandardCharsets.UTF_8));
+            sb.append(encode(value));
             sb.append('&');
         }
         if (!sb.isEmpty()) {
