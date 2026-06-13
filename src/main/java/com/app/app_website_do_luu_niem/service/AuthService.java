@@ -42,14 +42,86 @@ public class AuthService {
         return userDao.findByEmail(em);
     }
 
-    public Optional<User> login(String email, String password) {
-        if (email == null || email.isBlank() || password == null || password.isBlank()) {
-            return Optional.empty();
+    public Optional<User> findById(int id) {
+        return userDao.findById(id);
+    }
+
+    public static class LoginResult {
+        private User user;
+        private String error; // "banned", "unverified", "locked", "wrong_password", "not_found", "no_local_password", "invalid_input"
+        private int remainingLockMinutes;
+
+        public User getUser() { return user; }
+        public String getError() { return error; }
+        public int getRemainingLockMinutes() { return remainingLockMinutes; }
+    }
+
+    public LoginResult login(String identifier, String password) {
+        LoginResult result = new LoginResult();
+        if (identifier == null || identifier.isBlank() || password == null || password.isBlank()) {
+            result.error = "invalid_input";
+            return result;
         }
-        return findByEmailNormalized(email)
-                .filter(User::isActive)
-                .filter(User::hasLocalPassword)
-                .filter(u -> verifyPassword(password, u.getPasswordHash()));
+
+        Optional<User> opt = userDao.findByEmailOrUsernameOrPhone(identifier);
+        if (opt.isEmpty()) {
+            result.error = "not_found";
+            return result;
+        }
+
+        User user = opt.get();
+
+        // Check if locked
+        if (user.getLockTime() != null && user.getLockTime().isAfter(LocalDateTime.now())) {
+            result.user = user;
+            result.error = "locked";
+            result.remainingLockMinutes = (int) java.time.Duration.between(LocalDateTime.now(), user.getLockTime()).toMinutes() + 1;
+            return result;
+        }
+
+        // Check if Banned
+        if ("BANNED".equalsIgnoreCase(user.getStatus())) {
+            result.error = "banned";
+            return result;
+        }
+
+        // Check if Unverified
+        if ("UNVERIFIED".equalsIgnoreCase(user.getStatus())) {
+            result.user = user;
+            result.error = "unverified";
+            // Resend OTP
+            sendRegistrationOtp(user);
+            return result;
+        }
+
+        if (!user.hasLocalPassword()) {
+            result.error = "no_local_password";
+            return result;
+        }
+
+        if (verifyPassword(password, user.getPasswordHash())) {
+            // Reset failed login count
+            if (user.getFailedLogins() > 0 || user.getLockTime() != null) {
+                userDao.resetFailedLogins(user.getId());
+                user.setFailedLogins(0);
+                user.setLockTime(null);
+            }
+            result.user = user;
+            return result; // Success (error is null)
+        } else {
+            // Increment failed login count
+            userDao.incrementFailedLogins(user.getId());
+            int currentFailed = user.getFailedLogins() + 1;
+            if (currentFailed >= 5) {
+                LocalDateTime lockUntil = LocalDateTime.now().plusMinutes(15);
+                userDao.lockUser(user.getId(), lockUntil);
+                result.error = "locked";
+                result.remainingLockMinutes = 15;
+            } else {
+                result.error = "wrong_password";
+            }
+            return result;
+        }
     }
 
     private static boolean verifyPassword(String rawPassword, String passwordHash) {
@@ -81,13 +153,13 @@ public class AuthService {
         Optional<User> byGoogle = userDao.findByGoogleId(googleId);
         if (byGoogle.isPresent()) {
             User u = byGoogle.get();
-            return u.isActive() ? Optional.empty() : Optional.of("inactive");
+            return (u.isActive() && !"BANNED".equalsIgnoreCase(u.getStatus())) ? Optional.empty() : Optional.of("inactive");
         }
 
         Optional<User> byEmail = userDao.findByEmail(email);
         if (byEmail.isPresent()) {
             User existing = byEmail.get();
-            if (!existing.isActive()) {
+            if (!existing.isActive() || "BANNED".equalsIgnoreCase(existing.getStatus())) {
                 return Optional.of("inactive");
             }
             if (existing.getGoogleId() != null && !existing.getGoogleId().isBlank()
@@ -109,32 +181,106 @@ public class AuthService {
         user.setPasswordHash(null);
         user.setRole("CUSTOMER");
         user.setActive(true);
+        user.setStatus("ACTIVE");
         user.setCreatedAt(LocalDateTime.now());
         userDao.save(user);
         return Optional.empty();
     }
 
     public Optional<User> findActiveUserByGoogleId(String googleId) {
-        return userDao.findByGoogleId(googleId).filter(User::isActive);
+        return userDao.findByGoogleId(googleId).filter(u -> u.isActive() && !"BANNED".equalsIgnoreCase(u.getStatus()));
     }
 
-    public boolean register(String fullName, String email, String rawPassword) {
+    public String register(String fullName, String email, String username, String phone, String rawPassword) {
         String em = normalizeEmail(email);
-        if (userDao.findByEmail(em).isPresent()) {
-            return false;
+        
+        // Check Banned Email
+        Optional<User> existingOpt = userDao.findByEmail(em);
+        if (existingOpt.isPresent()) {
+            User existing = existingOpt.get();
+            if ("BANNED".equalsIgnoreCase(existing.getStatus())) {
+                return "Email này đã bị khóa do vi phạm chính sách và không thể đăng ký mới.";
+            }
+            return "Email đã được sử dụng, vui lòng chọn email khác.";
         }
+
+        if (username != null && !username.isBlank()) {
+            if (userDao.usernameExists(username)) {
+                return "Username đã được sử dụng, vui lòng chọn username khác.";
+            }
+        }
+        if (phone != null && !phone.isBlank()) {
+            if (userDao.phoneExists(phone)) {
+                return "Số điện thoại đã được sử dụng, vui lòng chọn số điện thoại khác.";
+            }
+        }
+
         if (!PASSWORD_STRONG.matcher(rawPassword).matches()) {
-            return false;
+            return "Mật khẩu phải từ 8–128 ký tự, gồm ít nhất một chữ cái và một chữ số.";
         }
+
         User user = new User();
         user.setFullName(fullName);
         user.setEmail(em);
+        user.setUsername(username != null && !username.isBlank() ? username.trim() : null);
+        user.setPhone(phone != null && !phone.isBlank() ? phone.trim() : null);
         user.setPasswordHash(BCrypt.hashpw(rawPassword, BCrypt.gensalt()));
         user.setRole("CUSTOMER");
         user.setActive(true);
+        user.setStatus("UNVERIFIED"); // Require OTP
         user.setCreatedAt(LocalDateTime.now());
+        
         userDao.save(user);
-        return true;
+        
+        // Generate and Send OTP
+        sendRegistrationOtp(user);
+        
+        return null; // Success
+    }
+
+    public void sendRegistrationOtp(User user) {
+        // Generate 6 digit code
+        java.util.Random rand = new java.util.Random();
+        String otp = String.format("%06d", rand.nextInt(1000000));
+        LocalDateTime expires = LocalDateTime.now().plusMinutes(10);
+        userDao.saveOtpCode(user.getId(), otp, expires);
+
+        try {
+            if (AppConfig.isMailEnabled()) {
+                String html = """
+                        <!DOCTYPE html>
+                        <html><head><meta charset="UTF-8"></head><body style="font-family:Segoe UI,sans-serif;padding:20px;background:#f6f7fb;">
+                        <div style="background:#fff;border-radius:8px;padding:24px;box-shadow:0 2px 10px rgba(0,0,0,0.05);max-width:500px;margin:auto;">
+                          <h2 style="color:#2c5f2d;margin:0 0 16px;">Xác thực tài khoản của bạn</h2>
+                          <p>Xin chào <strong>%s</strong>,</p>
+                          <p>Cảm ơn bạn đã đăng ký tài khoản tại Souvenir Shop. Vui lòng sử dụng mã OTP dưới đây để hoàn tất việc đăng ký tài khoản (mã hết hạn sau 10 phút):</p>
+                          <div style="background:#f4f9f4;border:1px dashed #2c5f2d;color:#2c5f2d;font-size:24px;font-weight:bold;text-align:center;padding:12px;margin:20px 0;letter-spacing:4px;">
+                            %s
+                          </div>
+                          <p style="color:#666;font-size:13px;">Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.</p>
+                        </div>
+                        </body></html>
+                        """.formatted(user.getFullName(), otp);
+                new MailService().sendHtml(user.getEmail(), user.getFullName(), "Mã xác thực đăng ký tài khoản Souvenir Shop", html);
+            } else {
+                System.out.println("[Tomcat Log - mail.enabled=false] Mã OTP đăng ký của " + user.getEmail() + " là: " + otp);
+            }
+        } catch (Exception e) {
+            System.err.println("Không gửi được OTP email: " + e.getMessage());
+        }
+    }
+
+    public boolean verifyRegistrationOtp(int userId, String inputOtp) {
+        if (inputOtp == null || inputOtp.isBlank()) {
+            return false;
+        }
+        Optional<String> realOtp = userDao.getOtpCode(userId);
+        if (realOtp.isPresent() && realOtp.get().equals(inputOtp.trim())) {
+            userDao.updateStatus(userId, "ACTIVE");
+            userDao.clearOtpCode(userId);
+            return true;
+        }
+        return false;
     }
 
     /**
