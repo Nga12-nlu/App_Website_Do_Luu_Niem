@@ -10,7 +10,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -50,9 +51,10 @@ public class VNPayService {
         params.put("vnp_OrderType", "other");
         params.put("vnp_Locale", "vn");
         params.put("vnp_ReturnUrl", resolveReturnUrl(req));
-        params.put("vnp_IpnUrl", resolveIpnUrl(req));
         params.put("vnp_IpAddr", AuthService.clientIpForVnpay(req));
-        params.put("vnp_CreateDate", LocalDateTime.now().format(VNPAY_DATE));
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+        params.put("vnp_CreateDate", now.format(VNPAY_DATE));
+        params.put("vnp_ExpireDate", now.plusMinutes(15).format(VNPAY_DATE));
 
         String hash = VNPayUtil.hashAllFields(params, AppConfig.getVnpayHashSecret());
         params.put("vnp_SecureHash", hash);
