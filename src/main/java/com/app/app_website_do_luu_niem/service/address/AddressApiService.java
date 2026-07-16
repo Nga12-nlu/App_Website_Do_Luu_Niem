@@ -6,10 +6,15 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AddressApiService {
 
     private final Map<String, AddressDataProvider> providers = new LinkedHashMap<>();
+
+    private static final Map<String, List<AddressPlace>> provinceCache = new ConcurrentHashMap<>();
+    private static final Map<String, List<AddressPlace>> districtCache = new ConcurrentHashMap<>();
+    private static final Map<String, List<AddressPlace>> wardCache = new ConcurrentHashMap<>();
 
     public AddressApiService() {
         providers.put("open-api", new OpenApiVnProvider());
@@ -32,21 +37,67 @@ public class AddressApiService {
     }
 
     public List<AddressPlace> getProvinces(String providerId) throws Exception {
-        return resolve(providerId).fetchProvinces();
+        String id = providerId != null && !providerId.isBlank() ? providerId.trim() : getDefaultProviderId();
+        try {
+            return provinceCache.computeIfAbsent(id, key -> {
+                try {
+                    return resolve(key).fetchProvinces();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof Exception) {
+                throw (Exception) e.getCause();
+            }
+            throw e;
+        }
     }
 
     public List<AddressPlace> getDistricts(String providerId, String provinceCode) throws Exception {
         if (provinceCode == null || provinceCode.isBlank()) {
             return List.of();
         }
-        return resolve(providerId).fetchDistricts(provinceCode.trim());
+        String id = providerId != null && !providerId.isBlank() ? providerId.trim() : getDefaultProviderId();
+        String cacheKey = id + ":" + provinceCode.trim();
+        try {
+            return districtCache.computeIfAbsent(cacheKey, key -> {
+                try {
+                    String[] parts = key.split(":", 2);
+                    return resolve(parts[0]).fetchDistricts(parts[1]);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof Exception) {
+                throw (Exception) e.getCause();
+            }
+            throw e;
+        }
     }
 
     public List<AddressPlace> getWards(String providerId, String districtCode) throws Exception {
         if (districtCode == null || districtCode.isBlank()) {
             return List.of();
         }
-        return resolve(providerId).fetchWards(districtCode.trim());
+        String id = providerId != null && !providerId.isBlank() ? providerId.trim() : getDefaultProviderId();
+        String cacheKey = id + ":" + districtCode.trim();
+        try {
+            return wardCache.computeIfAbsent(cacheKey, key -> {
+                try {
+                    String[] parts = key.split(":", 2);
+                    return resolve(parts[0]).fetchWards(parts[1]);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof Exception) {
+                throw (Exception) e.getCause();
+            }
+            throw e;
+        }
     }
 
     private AddressDataProvider resolve(String providerId) {

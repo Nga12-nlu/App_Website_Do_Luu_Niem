@@ -10,6 +10,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class GhnShippingService {
 
@@ -17,7 +19,16 @@ public class GhnShippingService {
             .connectTimeout(Duration.ofSeconds(12))
             .build();
 
+    private static final Map<String, BigDecimal> feeCache = new ConcurrentHashMap<>();
+
     public BigDecimal calculateShippingFee(int toDistrictId, String toWardCode, int weightInGrams, BigDecimal insuranceValue) throws Exception {
+        String key = toDistrictId + ":" + (toWardCode != null ? toWardCode.trim() : "") + ":" + weightInGrams + ":" + (insuranceValue != null ? insuranceValue.toPlainString() : "0");
+        
+        BigDecimal cached = feeCache.get(key);
+        if (cached != null) {
+            return cached;
+        }
+
         String url = AppConfig.getGhnApiUrl() + "shipping-order/fee";
         int fromDistrict = AppConfig.getGhnFromDistrictId();
         String fromWard = AppConfig.getGhnFromWardCode();
@@ -69,7 +80,12 @@ public class GhnShippingService {
         if (root.has("code") && root.get("code").getAsInt() == 200 && root.has("data")) {
             JsonObject data = root.getAsJsonObject("data");
             if (data.has("total")) {
-                return BigDecimal.valueOf(data.get("total").getAsLong());
+                BigDecimal result = BigDecimal.valueOf(data.get("total").getAsLong());
+                if (feeCache.size() > 2000) {
+                    feeCache.clear();
+                }
+                feeCache.put(key, result);
+                return result;
             }
         }
         throw new IllegalStateException("Invalid response from GHN API: " + res.body());
