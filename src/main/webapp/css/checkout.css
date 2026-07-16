@@ -4,16 +4,27 @@
 }
 
 .checkout-breadcrumb .breadcrumb-item a {
-    color: var(--souvenir-primary, #8b4513);
+    color: var(--primary, #2c5f2d);
     text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.checkout-breadcrumb .breadcrumb-item a:hover {
+    color: var(--primary-dark, #1e4620);
 }
 
 .checkout-card {
     background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: var(--radius, 12px);
     overflow: hidden;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow, 0 4px 20px rgba(0,0,0,0.08));
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
+}
+
+.checkout-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover, 0 8px 30px rgba(0,0,0,0.12));
 }
 
 .checkout-card-header {
@@ -32,11 +43,16 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: var(--souvenir-primary, #8b4513);
+    background: var(--primary, #2c5f2d);
     color: #fff;
     font-size: 0.85rem;
     font-weight: 700;
     flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+.checkout-card:hover .checkout-step {
+    transform: scale(1.1);
 }
 
 .checkout-card-body {
@@ -49,23 +65,36 @@
     padding: 0.75rem 1rem;
     background: #f8f9fa;
     border-radius: 8px;
+    border-left: 3px solid var(--primary, #2c5f2d);
 }
 
 .address-preview {
     font-size: 0.9rem;
     padding: 0.75rem 1rem;
-    background: #e8f4fd;
+    background: #e8f5e9;
     border-radius: 8px;
-    color: #0c5460;
+    color: var(--primary-dark, #1e4620);
+    border: 1px solid rgba(44, 95, 45, 0.15);
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .checkout-summary {
     background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: var(--radius, 12px);
     padding: 1.25rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow, 0 4px 20px rgba(0,0,0,0.08));
     top: 1rem;
+    transition: box-shadow 0.3s ease;
+}
+
+.checkout-summary:hover {
+    box-shadow: var(--shadow-hover, 0 8px 30px rgba(0,0,0,0.12));
 }
 
 .checkout-summary-title {
@@ -74,6 +103,7 @@
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid #eee;
+    color: var(--primary-dark, #1e4620);
 }
 
 .checkout-item {
@@ -101,6 +131,12 @@
     background: #faf8f5;
     border-radius: 8px;
     border: 1px dashed #ddd;
+    transition: all 0.2s ease;
+}
+
+.coupon-box:focus-within {
+    border-color: var(--primary, #2c5f2d);
+    background: #fff;
 }
 
 .checkout-totals {
@@ -127,6 +163,13 @@
     border-radius: 10px;
     padding: 1rem 1.25rem;
     margin-bottom: 1.5rem;
+}
+
+/* Global focus styling for form elements within checkout */
+.checkout-page .form-control:focus,
+.checkout-page .form-select:focus {
+    border-color: var(--primary, #2c5f2d) !important;
+    box-shadow: 0 0 0 3px rgba(44, 95, 45, 0.15) !important;
 }
 
 @media (max-width: 991px) {
