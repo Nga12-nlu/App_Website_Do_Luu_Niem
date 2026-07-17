@@ -128,6 +128,9 @@
                             <c:when test="${order.status eq 'PENDING'}">
                                 <span class="admin-badge admin-badge-warning">Chờ xử lý</span>
                             </c:when>
+                            <c:when test="${order.status eq 'CONFIRMED'}">
+                                <span class="admin-badge admin-badge-success">Đã xác nhận</span>
+                            </c:when>
                             <c:when test="${order.status eq 'PACKAGING'}">
                                 <span class="admin-badge admin-badge-warning">Đang đóng gói</span>
                             </c:when>
@@ -157,6 +160,7 @@
                         <label class="admin-filter-label">Cập nhật trạng thái</label>
                         <select name="status" class="form-select">
                             <option value="PENDING" ${order.status eq 'PENDING' ? 'selected' : ''}>Chờ xử lý</option>
+                            <option value="CONFIRMED" ${order.status eq 'CONFIRMED' ? 'selected' : ''}>Đã xác nhận</option>
                             <option value="PACKAGING" ${order.status eq 'PACKAGING' ? 'selected' : ''}>Đang đóng gói</option>
                             <option value="AWAITING_SHIPPING" ${order.status eq 'AWAITING_SHIPPING' ? 'selected' : ''}>Chờ giao ĐVVC</option>
                             <option value="SHIPPING" ${order.status eq 'SHIPPING' ? 'selected' : ''}>Đang giao hàng</option>

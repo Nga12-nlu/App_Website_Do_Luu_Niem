@@ -29,6 +29,7 @@
                 <select name="status" class="form-select">
                     <option value="">Tất cả trạng thái</option>
                     <option value="PENDING" ${status eq 'PENDING' ? 'selected' : ''}>Chờ xử lý</option>
+                    <option value="CONFIRMED" ${status eq 'CONFIRMED' ? 'selected' : ''}>Đã xác nhận</option>
                     <option value="PACKAGING" ${status eq 'PACKAGING' ? 'selected' : ''}>Đang đóng gói</option>
                     <option value="AWAITING_SHIPPING" ${status eq 'AWAITING_SHIPPING' ? 'selected' : ''}>Chờ giao ĐVVC</option>
                     <option value="SHIPPING" ${status eq 'SHIPPING' ? 'selected' : ''}>Đang giao hàng</option>
@@ -93,6 +94,9 @@
                                 <c:choose>
                                     <c:when test="${o.status eq 'PENDING'}">
                                         <span class="admin-badge admin-badge-warning">Chờ xử lý</span>
+                                    </c:when>
+                                    <c:when test="${o.status eq 'CONFIRMED'}">
+                                        <span class="admin-badge admin-badge-success">Đã xác nhận</span>
                                     </c:when>
                                     <c:when test="${o.status eq 'PACKAGING'}">
                                         <span class="admin-badge admin-badge-warning">Đang đóng gói</span>

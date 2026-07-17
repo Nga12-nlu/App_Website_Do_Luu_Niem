@@ -91,10 +91,13 @@
                             <span>Trạng thái</span>
                         </div>
                         <div class="order-info-value">
-                            <span class="badge ${order.status eq 'CONFIRMED' ? 'bg-success' : order.status eq 'CANCELLED' ? 'bg-danger' : order.status eq 'SHIPPED' ? 'bg-info' : 'bg-warning'}">
+                            <span class="badge ${order.status eq 'CONFIRMED' or order.status eq 'SHIPPED' ? 'bg-success' : order.status eq 'CANCELLED' ? 'bg-danger' : order.status eq 'SHIPPING' ? 'bg-primary' : 'bg-warning text-dark'}">
                                 <c:choose>
                                     <c:when test="${order.status eq 'PENDING'}">Chờ xử lý</c:when>
                                     <c:when test="${order.status eq 'CONFIRMED'}">Đã xác nhận</c:when>
+                                    <c:when test="${order.status eq 'PACKAGING'}">Đang đóng gói</c:when>
+                                    <c:when test="${order.status eq 'AWAITING_SHIPPING'}">Chờ giao ĐVVC</c:when>
+                                    <c:when test="${order.status eq 'SHIPPING'}">Đang giao hàng</c:when>
                                     <c:when test="${order.status eq 'SHIPPED'}">Đã giao hàng</c:when>
                                     <c:when test="${order.status eq 'CANCELLED'}">Đã hủy</c:when>
                                     <c:otherwise>${order.status}</c:otherwise>

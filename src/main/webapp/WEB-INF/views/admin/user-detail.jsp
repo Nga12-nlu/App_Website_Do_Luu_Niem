@@ -162,8 +162,17 @@
                                                 <c:when test="${o.status eq 'CONFIRMED'}">
                                                     <span class="admin-badge admin-badge-success">Đã xác nhận</span>
                                                 </c:when>
+                                                <c:when test="${o.status eq 'PACKAGING'}">
+                                                    <span class="admin-badge admin-badge-warning">Đang đóng gói</span>
+                                                </c:when>
+                                                <c:when test="${o.status eq 'AWAITING_SHIPPING'}">
+                                                    <span class="admin-badge admin-badge-warning">Chờ giao ĐVVC</span>
+                                                </c:when>
+                                                <c:when test="${o.status eq 'SHIPPING'}">
+                                                    <span class="admin-badge admin-badge-info">Đang giao hàng</span>
+                                                </c:when>
                                                 <c:when test="${o.status eq 'SHIPPED'}">
-                                                    <span class="admin-badge admin-badge-info">Đã giao</span>
+                                                    <span class="admin-badge admin-badge-success">Đã giao hàng</span>
                                                 </c:when>
                                                 <c:when test="${o.status eq 'CANCELLED'}">
                                                     <span class="admin-badge admin-badge-danger">Đã hủy</span>

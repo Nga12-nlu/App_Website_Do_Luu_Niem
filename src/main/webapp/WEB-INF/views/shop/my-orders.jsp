@@ -41,12 +41,14 @@
                                 <div>
                                     <span class="badge <c:choose>
                                         <c:when test="${order.status eq 'SHIPPED'}">bg-success</c:when>
+                                        <c:when test="${order.status eq 'CONFIRMED'}">bg-success</c:when>
                                         <c:when test="${order.status eq 'CANCELLED'}">bg-danger</c:when>
                                         <c:when test="${order.status eq 'SHIPPING'}">bg-primary</c:when>
                                         <c:otherwise>bg-warning text-dark</c:otherwise>
                                     </c:choose> fs-6">
                                         <c:choose>
                                             <c:when test="${order.status eq 'PENDING'}">Chờ xử lý</c:when>
+                                            <c:when test="${order.status eq 'CONFIRMED'}">Đã xác nhận</c:when>
                                             <c:when test="${order.status eq 'PACKAGING'}">Đang đóng gói</c:when>
                                             <c:when test="${order.status eq 'AWAITING_SHIPPING'}">Chờ giao ĐVVC</c:when>
                                             <c:when test="${order.status eq 'SHIPPING'}">Đang giao hàng</c:when>
@@ -62,7 +64,7 @@
                             <c:if test="${order.status ne 'CANCELLED'}">
                                 <c:set var="status" value="${order.status}"/>
                                 <c:choose>
-                                    <c:when test="${status eq 'PENDING'}">
+                                    <c:when test="${status eq 'PENDING' or status eq 'CONFIRMED'}">
                                         <c:set var="step" value="1"/>
                                         <c:set var="pct" value="0"/>
                                     </c:when>

@@ -158,6 +158,13 @@ public class AdminUserServlet extends HttpServlet {
             }
         }
 
+        boolean oldActive = true;
+        String oldRole = "";
+        if (!isCreate) {
+            oldActive = user.isActive();
+            oldRole = user.getRole();
+        }
+
         String fullName = trim(req.getParameter("fullName"));
         String email = normalizeEmail(req.getParameter("email"));
         String role = normalizeRole(req.getParameter("role"));
@@ -215,11 +222,17 @@ public class AdminUserServlet extends HttpServlet {
             SystemLogHelper.log(req, "CREATE_USER", "USER", "Đã tạo tài khoản mới: email=" + user.getEmail() + ", vai trò=" + user.getRole());
             redirectWithMsg(req, resp, "created");
         } else {
-            String oldRole = user.getRole();
             userDao.update(user);
-            if (!oldRole.equalsIgnoreCase(user.getRole())) {
+            boolean roleChanged = !oldRole.equalsIgnoreCase(user.getRole());
+            boolean activeChanged = oldActive != user.isActive();
+            if (roleChanged || activeChanged) {
                 userDao.logRoleUpdate(user.getId(), user.getRole());
-                SystemLogHelper.log(req, "CHANGE_ROLE", "USER", "Thay đổi vai trò user id=" + user.getId() + ": " + oldRole + " -> " + user.getRole());
+                if (roleChanged) {
+                    SystemLogHelper.log(req, "CHANGE_ROLE", "USER", "Thay đổi vai trò user id=" + user.getId() + ": " + oldRole + " -> " + user.getRole());
+                }
+                if (activeChanged) {
+                    SystemLogHelper.log(req, "CHANGE_ACTIVE", "USER", "Thay đổi trạng thái hoạt động user id=" + user.getId() + ": " + oldActive + " -> " + user.isActive());
+                }
             } else {
                 SystemLogHelper.log(req, "UPDATE_USER", "USER", "Cập nhật thông tin user id=" + user.getId() + ", email=" + user.getEmail());
             }
@@ -273,6 +286,7 @@ public class AdminUserServlet extends HttpServlet {
             }
             user.setActive(!user.isActive());
             userDao.update(user);
+            userDao.logRoleUpdate(user.getId(), user.getRole());
             SystemLogHelper.log(req, user.isActive() ? "ACTIVATE_USER" : "BLOCK_USER", "USER", "Thay đổi trạng thái hoạt động user id=" + id + " thành " + user.isActive());
             redirectWithMsg(req, resp, user.isActive() ? "activated" : "locked");
         } catch (NumberFormatException e) {

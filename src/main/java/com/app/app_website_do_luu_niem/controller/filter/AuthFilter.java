@@ -45,17 +45,23 @@ public class AuthFilter implements Filter {
             return;
         }
 
-        // Kiểm tra xem có cập nhật quyền nào mới được ghi nhận không
+        // Kiểm tra xem có cập nhật quyền hoặc trạng thái nào mới được ghi nhận không
         java.time.LocalDateTime loginTime = (java.time.LocalDateTime) session.getAttribute("loginTime");
         if (loginTime != null) {
             com.app.app_website_do_luu_niem.dao.UserDao userDao = new com.app.app_website_do_luu_niem.dao.impl.UserDaoImpl();
             java.time.LocalDateTime lastUpdate = userDao.getLastRoleUpdate(currentUser.getId());
             if (lastUpdate != null && lastUpdate.isAfter(loginTime)) {
                 java.util.Optional<User> fresh = userDao.findById(currentUser.getId());
-                if (fresh.isPresent() && !fresh.get().getRole().equalsIgnoreCase(currentUser.getRole())) {
-                    session.invalidate();
-                    httpRes.sendRedirect(httpReq.getContextPath() + "/login?msg=role_changed");
-                    return;
+                if (fresh.isPresent()) {
+                    User freshUser = fresh.get();
+                    boolean roleChanged = !freshUser.getRole().equalsIgnoreCase(currentUser.getRole());
+                    boolean isDisabled = !freshUser.isActive() || "BANNED".equalsIgnoreCase(freshUser.getStatus());
+                    if (roleChanged || isDisabled) {
+                        session.invalidate();
+                        String msg = isDisabled ? "banned" : "role_changed";
+                        httpRes.sendRedirect(httpReq.getContextPath() + "/login?msg=" + msg);
+                        return;
+                    }
                 }
             }
         }

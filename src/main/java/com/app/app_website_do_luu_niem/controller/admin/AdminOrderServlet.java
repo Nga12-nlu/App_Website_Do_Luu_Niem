@@ -19,7 +19,7 @@ public class AdminOrderServlet extends HttpServlet {
     private final OrderDao orderDao = new OrderDaoImpl();
 
     private static final java.util.Set<String> ALLOWED_STATUSES = java.util.Set.of(
-            "PENDING", "PACKAGING", "AWAITING_SHIPPING", "SHIPPING", "SHIPPED", "CANCELLED");
+            "PENDING", "CONFIRMED", "PACKAGING", "AWAITING_SHIPPING", "SHIPPING", "SHIPPED", "CANCELLED");
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
